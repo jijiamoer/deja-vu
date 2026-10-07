@@ -4,7 +4,7 @@
       "hooks": [
         {
           "type": "command",
-          "command": "c=\"${XDG_CONFIG_HOME:-$HOME/.config}/devin/config.json\"; if [ -f \"$c\" ] && grep -qE 'deja[^\"]*hook-(context|prompt|tool)' \"$c\" 2>/dev/null; then cat >/dev/null 2>&1 || true; exit 0; fi; if ! command -v deja >/dev/null 2>&1; then cat >/dev/null 2>&1 || true; printf '%s\\n' '{\"systemMessage\":\"deja-vu plugin is installed but the deja binary is not on PATH — install it with: brew install deja-vu  (or: go install github.com/vshulcz/deja-vu/cmd/deja@latest)\"}'; exit 0; fi; exec deja hook-context",
+          "command": "\"${DEVIN_PLUGIN_ROOT}/hooks/deja.sh\" hook-context",
           "timeout": 60
         }
       ]
@@ -15,7 +15,7 @@
       "hooks": [
         {
           "type": "command",
-          "command": "c=\"${XDG_CONFIG_HOME:-$HOME/.config}/devin/config.json\"; if [ -f \"$c\" ] && grep -qE 'deja[^\"]*hook-(context|prompt|tool)' \"$c\" 2>/dev/null; then cat >/dev/null 2>&1 || true; exit 0; fi; if ! command -v deja >/dev/null 2>&1; then cat >/dev/null 2>&1 || true; printf '%s\\n' '{\"systemMessage\":\"deja-vu plugin is installed but the deja binary is not on PATH — install it with: brew install deja-vu  (or: go install github.com/vshulcz/deja-vu/cmd/deja@latest)\"}'; exit 0; fi; exec deja hook-context",
+          "command": "\"${DEVIN_PLUGIN_ROOT}/hooks/deja.sh\" hook-context",
           "timeout": 60
         }
       ]
@@ -26,7 +26,7 @@
       "hooks": [
         {
           "type": "command",
-          "command": "c=\"${XDG_CONFIG_HOME:-$HOME/.config}/devin/config.json\"; if [ -f \"$c\" ] && grep -qE 'deja[^\"]*hook-(context|prompt|tool)' \"$c\" 2>/dev/null; then cat >/dev/null 2>&1 || true; exit 0; fi; if ! command -v deja >/dev/null 2>&1; then cat >/dev/null 2>&1 || true; exit 0; fi; exec deja hook-prompt",
+          "command": "\"${DEVIN_PLUGIN_ROOT}/hooks/deja.sh\" hook-prompt",
           "timeout": 60
         }
       ]
@@ -34,11 +34,11 @@
   ],
   "PostToolUse": [
     {
-      "matcher": "^(exec|edit|write|apply_patch|notebook_edit|run_subagent)$",
+      "matcher": "^(exec|edit|write|apply_patch|notebook_edit)$",
       "hooks": [
         {
           "type": "command",
-          "command": "c=\"${XDG_CONFIG_HOME:-$HOME/.config}/devin/config.json\"; if [ -f \"$c\" ] && grep -qE 'deja[^\"]*hook-(context|prompt|tool)' \"$c\" 2>/dev/null; then cat >/dev/null 2>&1 || true; exit 0; fi; if ! command -v deja >/dev/null 2>&1; then cat >/dev/null 2>&1 || true; exit 0; fi; exec deja hook-tool",
+          "command": "\"${DEVIN_PLUGIN_ROOT}/hooks/deja.sh\" hook-tool",
           "timeout": 60
         }
       ]
@@ -48,7 +48,7 @@
       "hooks": [
         {
           "type": "command",
-          "command": "c=\"${XDG_CONFIG_HOME:-$HOME/.config}/devin/config.json\"; if [ -f \"$c\" ] && grep -qE 'deja[^\"]*hook-(context|prompt|tool)' \"$c\" 2>/dev/null; then cat >/dev/null 2>&1 || true; exit 0; fi; if ! command -v deja >/dev/null 2>&1; then cat >/dev/null 2>&1 || true; exit 0; fi; exec deja hook-tool-after",
+          "command": "\"${DEVIN_PLUGIN_ROOT}/hooks/deja.sh\" hook-tool-after",
           "timeout": 60
         }
       ]
@@ -59,7 +59,7 @@
       "hooks": [
         {
           "type": "command",
-          "command": "c=\"${XDG_CONFIG_HOME:-$HOME/.config}/devin/config.json\"; if [ -f \"$c\" ] && grep -qE 'deja[^\"]*hook-(context|prompt|tool)' \"$c\" 2>/dev/null; then cat >/dev/null 2>&1 || true; exit 0; fi; if ! command -v deja >/dev/null 2>&1; then cat >/dev/null 2>&1 || true; exit 0; fi; exec deja hook-session-end",
+          "command": "\"${DEVIN_PLUGIN_ROOT}/hooks/deja.sh\" hook-session-end",
           "timeout": 60
         }
       ]

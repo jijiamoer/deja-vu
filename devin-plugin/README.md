@@ -52,11 +52,13 @@ nothing runs twice.
 
 ## Where this runs
 
-On Devin CLI the hooks fire on every event the plugin wires. In Devin's cloud
-sessions, plugin hooks cannot fire `SessionStart` or `SessionEnd`, so the
-opening digest and the end-of-session marker are CLI-only there; the prompt,
-tool and compaction hooks work on both. Either way the MCP server and the
-skill are always available.
+On Devin CLI the hooks fire on every event the plugin wires — verified on
+Devin CLI 3000.11.3. Devin's cloud sessions are reported to fire plugin hooks
+on a smaller event set (`SessionStart` and `SessionEnd` among the ones not
+delivered — the plugin docs are a closed beta and the list is not public), so
+on those the opening digest and the end-of-session marker may be CLI-only;
+the prompt, tool and compaction hooks work on both. Either way the MCP
+server and the skill are always available.
 
 deja reads Devin CLI's sessions from `~/.local/share/devin/cli/sessions.db`
 (the older `cli_sessions.db` is still read), including the subagent runs it

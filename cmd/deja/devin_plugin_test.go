@@ -69,14 +69,8 @@ func TestDevinPluginMatchesTheInstaller(t *testing.T) {
 			if h.Type != "command" || h.Timeout != 60 {
 				t.Fatalf("%s[%d]: hook %+v", event, i, h)
 			}
-			if !strings.HasSuffix(h.Command, "exec deja "+sub) {
-				t.Fatalf("%s[%d]: command %q does not run deja %s", event, i, h.Command, sub)
-			}
-			// The plugin stands down when `deja install devin-auto` has already
-			// wired ~/.config/devin/config.json — every session would otherwise
-			// get the digest twice — and it stays silent without the binary.
-			if !strings.Contains(h.Command, "config.json") || !strings.Contains(h.Command, "command -v deja") {
-				t.Fatalf("%s[%d]: command %q has no stand-down or binary guard", event, i, h.Command)
+			if h.Command != `"${DEVIN_PLUGIN_ROOT}/hooks/deja.sh" `+sub {
+				t.Fatalf("%s[%d]: command %q does not bridge to deja %s", event, i, h.Command, sub)
 			}
 		}
 	}
@@ -85,22 +79,34 @@ func TestDevinPluginMatchesTheInstaller(t *testing.T) {
 			t.Errorf("plugin wires %s, which the installer never does", event)
 		}
 	}
-	// The opening digest is the moment to tell the user the binary is missing;
-	// the other events stay quiet.
-	for _, event := range []string{"SessionStart", "PostCompaction"} {
-		if !strings.Contains(hooks[event][0].Hooks[0].Command, "systemMessage") {
-			t.Errorf("%s hook does not say how to get the binary", event)
+	// The bridge script carries the guards the inline commands used to: stand
+	// down when `deja install devin-auto` wired config.json already — every
+	// session would otherwise get the digest twice — stay silent without the
+	// binary, and say once, through the opening digest, how to get it.
+	bridge, err := os.ReadFile(filepath.Join("..", "..", "devin-plugin", "hooks", "deja.sh"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"config.json", "command -v deja", "systemMessage", "exec \"$DEJA\" \"$@\""} {
+		if !strings.Contains(string(bridge), want) {
+			t.Errorf("hooks/deja.sh is missing %q", want)
 		}
 	}
 
 	root := filepath.Join("..", "..", "devin-plugin")
 	for _, rel := range []string{
-		"skills/deja-history/SKILL.md", "README.md", "LICENSE", "hooks.json",
+		"skills/deja-history/SKILL.md", "README.md", "LICENSE", "SECURITY.md",
+		"hooks.json", "hooks/deja.sh",
 	} {
 		info, err := os.Stat(filepath.Join(root, filepath.FromSlash(rel)))
 		if err != nil || !info.Mode().IsRegular() {
 			t.Errorf("devin-plugin/%s: %v", rel, err)
 		}
+	}
+	// The bridge runs under `sh` from the hooks.json entries; it has to be
+	// executable in the bundle a checkout hands the installer.
+	if info, err := os.Stat(filepath.Join(root, "hooks", "deja.sh")); err != nil || info.Mode()&0o111 == 0 {
+		t.Errorf("hooks/deja.sh is not executable: %v", err)
 	}
 	if m.Skills != "./skills/" {
 		t.Errorf("skills field = %q, want the bundle's skills dir", m.Skills)
