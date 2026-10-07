@@ -2193,6 +2193,7 @@ var hookNames = map[string]bool{
 	"hook-prompt":       true,
 	"hook-refresh":      true,
 	"hook-session-end":  true,
+	"hook-stop":         true,
 	"hook-tool":         true,
 	"hook-tool-after":   true,
 }

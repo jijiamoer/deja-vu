@@ -256,6 +256,9 @@ var commands = map[string]command{
 		}
 		return nil
 	},
+	"hook-stop": func(dir string, _ []string) error {
+		return runHookStop(dir, os.Stdin, os.Stdout)
+	},
 	"hook-mcp-call": func(dir string, _ []string) error {
 		runHookMCPCall(dir, os.Stdin, os.Stdout)
 		return nil
@@ -397,6 +400,9 @@ func run(args []string) error {
 		return cmdGoose(dir, args[1:], sourceInstance)
 	}
 	if cmd, ok := commands[args[0]]; ok {
+		if deferrableHooks[args[0]] {
+			return runHookDeferred(dir, args[0], args[1:], cmd)
+		}
 		return cmd(dir, args[1:])
 	}
 	// A `hook-…` this build does not have is a line in a config an older deja
@@ -4120,6 +4126,7 @@ var helpHidden = map[string]bool{
 	"hook-precompact":   true,
 	"hook-refresh":      true,
 	"hook-session-end":  true,
+	"hook-stop":         true,
 	"reasonix-ext":      true,
 	"warmup-status":     true,
 }

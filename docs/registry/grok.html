@@ -119,8 +119,9 @@
 <p>hook&#39;s <code>systemMessage</code> and drops its <code>additionalContext</code>, and the session&#39;s</p>
 <p><code>chat_history.jsonl</code> carries no deja-recall from either. Under grok, which</p>
 <p>sets <code>GROK_HOOK_EVENT</code> on every hook it runs, <code>hook-context</code> and</p>
-<p><code>hook-prompt</code> serve nothing and log nothing as arrived; the session-start</p>
-<p>receipt is left to say only what the index is doing (#4588).</p>
+<p><code>hook-prompt</code> hold their answer for the session&#39;s next <code>PreToolUse</code> or</p>
+<p><code>PostToolUse</code>, whose <code>additionalContext</code> does reach the model, and hand it</p>
+<p>over there once; the session-start receipt still shows at once.</p>
 <ul>
 <li><code>SessionEnd</code> runs <code>deja hook-session-end</code>, so the session is back in the</li>
 </ul>

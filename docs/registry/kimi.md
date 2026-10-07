@@ -35,7 +35,11 @@ Media is out of scope.
   (`deja hook-context --plain --once`, `deja hook-prompt --plain`) and a
   `PreCompact` one, and a `SessionEnd` hook that runs `deja hook-session-end`. Measured on 0.28.1, `UserPromptSubmit` is the only event
   whose output reaches the model, and it takes plain stdout, so the session
-  digest rides the first prompt rather than a session-start hook.
+  digest rides the first prompt rather than a session-start hook. Two more
+  entries, `PostToolUse` and `PostToolUseFailure` on `Bash`, run
+  `deja hook-tool-after --defer`: Kimi does not wait for them and drops what
+  they print, so the fix pair for a failed command is held and handed over
+  once, on the session's next prompt.
 - **Resume**: `kimi --session <sessionId>`, run in the `workDir` from the
   session's `state.json`: Kimi refuses a session from any other directory
   (verified live on 0.28.1). A `workDir` that is gone is refused with a

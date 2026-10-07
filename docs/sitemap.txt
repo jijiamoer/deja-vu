@@ -82,6 +82,9 @@ https://vshulcz.github.io/deja-vu/registry/grok.html
 https://vshulcz.github.io/deja-vu/registry/hermes.html
 https://vshulcz.github.io/deja-vu/registry/kimi.html
 https://vshulcz.github.io/deja-vu/registry/openclaw.html
+https://vshulcz.github.io/deja-vu/registry/hermes.html
+https://vshulcz.github.io/deja-vu/registry/kimi.html
+https://vshulcz.github.io/deja-vu/registry/openclaw.html
 https://vshulcz.github.io/deja-vu/registry/opencode.html
 https://vshulcz.github.io/deja-vu/registry/pi.html
 https://vshulcz.github.io/deja-vu/registry/qwen.html
