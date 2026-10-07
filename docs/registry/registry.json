@@ -1496,6 +1496,21 @@
         "handoff": "exec",
         "prereq": "sqlite3"
       },
+      "surfaces": {
+        "digest": {"status": "yes", "proof": "stand"},
+        "prompt": {"status": "yes", "proof": "stand"},
+        "pre_tool": {"status": "yes", "proof": "stand", "note": "arrives with the tool's result"},
+        "failure": {"status": "yes", "proof": "stand"},
+        "compaction_reset": {"status": "yes", "proof": "stand", "note": "PostCompaction is Devin's reset event; the context hook answers it"},
+        "compaction_capture": {"status": "no", "proof": "todo", "note": "PostCompaction fires after the context is rebuilt; the pre-compaction turns stay in sessions.db and a catch-up there is follow-up (#4801)"},
+        "compaction_packet": {"status": "no", "proof": "todo", "note": "no capture to ride yet; the packet follows the sessions.db catch-up (#4801)"},
+        "mcp": {"status": "yes", "proof": "fixture"},
+        "handoff": {"status": "yes", "proof": "fixture"},
+        "session_end": {"status": "yes", "proof": "stand"},
+        "rules": {"status": "no", "proof": "todo", "note": "Devin CLI reads AGENTS.md from the repo root; a rules-sync target there is follow-up (#4801)"},
+        "statusline": {"status": "no", "proof": "blocked", "note": "Devin CLI's surface is the six lifecycle hooks plus MCP and skills — no statusline channel exists in its config or plugin manifest (install_devin.go, CLI 3000.11.3)"},
+        "reader": {"status": "yes", "proof": "fixture"}
+      },
       "gaps": {
         "command": {
           "state": "impossible",
