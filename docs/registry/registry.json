@@ -1474,7 +1474,7 @@
     {
       "id": "devin",
       "store_paths": [
-        "~/Library/Application Support/devin/cli/sessions.db",
+        "~/.local/share/devin/cli/sessions.db",
         "${XDG_DATA_HOME}/devin/cli/sessions.db",
         "%LOCALAPPDATA%/devin/cli/sessions.db",
         "cli_sessions.db beside sessions.db (the legacy name)",

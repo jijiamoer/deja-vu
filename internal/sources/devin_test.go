@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -295,7 +296,7 @@ func TestParseDevinDBMissingTablesErrors(t *testing.T) {
 }
 
 func TestDevinFilesHonoursEnvAndDiscovers(t *testing.T) {
-	home := devinHome(t)
+	devinHome(t)
 	if got := DevinSessionsDB(); got != filepath.Join(devinDataDir(), "cli", "sessions.db") {
 		t.Fatalf("default store = %q", got)
 	}
@@ -312,7 +313,7 @@ func TestDevinFilesHonoursEnvAndDiscovers(t *testing.T) {
 		t.Fatalf("matcher refuses the env store")
 	}
 	// The legacy name is read beside the canonical one.
-	legacy := filepath.Join(home, ".local", "share", "devin", "cli", "cli_sessions.db")
+	legacy := filepath.Join(devinDataDir(), "cli", "cli_sessions.db")
 	if err := os.MkdirAll(filepath.Dir(legacy), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -358,6 +359,9 @@ func TestLoadDevinReadsDiscoveredStores(t *testing.T) {
 }
 
 func TestDevinDataDirFollowsXDG(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows keeps its own root under LOCALAPPDATA, not XDG")
+	}
 	home := devinHome(t)
 	if got := devinDataDir(); got != filepath.Join(home, ".local", "share", "devin") {
 		t.Fatalf("default data dir = %q", got)

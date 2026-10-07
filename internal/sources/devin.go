@@ -52,14 +52,12 @@ import (
 // session id.
 //
 // Read off Devin CLI 3000.11.3; `devin --resume <id>` takes the sessions
-// row's id. On Windows the store lives under %LOCALAPPDATA%\devin, on macOS
-// under ~/Library/Application Support/devin.
+// row's id. On Windows the store lives under %LOCALAPPDATA%\devin; Linux and
+// macOS share the XDG data directory, ~/.local/share/devin by default.
 
 // devinDataDir is Devin CLI's local data directory, the platform's own.
 func devinDataDir() string {
 	switch runtime.GOOS {
-	case "darwin":
-		return filepath.Join(Home(), "Library", "Application Support", "devin")
 	case "windows":
 		app := os.Getenv("LOCALAPPDATA")
 		if app == "" {

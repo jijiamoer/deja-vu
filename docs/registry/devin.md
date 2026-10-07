@@ -1,7 +1,7 @@
 # Devin CLI
 
 - **ID**: `devin`
-- **Store**: `<data>/devin/cli/sessions.db` — `~/.local/share/devin/cli/sessions.db` on Linux (verified); `~/Library/Application Support/devin/cli/sessions.db` on macOS and `%LOCALAPPDATA%\devin\cli\sessions.db` on Windows are the platform conventions the binary's own strings name — unverified on those platforms — with `cli_sessions.db` beside it holding the pre-rename copy
+- **Store**: `<data>/devin/cli/sessions.db` — `~/.local/share/devin/cli/sessions.db` on Linux and macOS (verified on both; `XDG_DATA_HOME` honoured); `%LOCALAPPDATA%\devin\cli\sessions.db` on Windows is the platform convention the binary's own strings name — unverified there — with `cli_sessions.db` beside it holding the pre-rename copy
 - **Summaries**: `<data>/devin/summaries/<session_id>.md`
 - **Read override**: `DEJA_DEVIN_DB` replaces the store path
 - **Format**: SQLite, two tables per conversation — `sessions` for the row, `message_nodes` for the turns — plus `prompt_history` for the inline shell commands run between turns
