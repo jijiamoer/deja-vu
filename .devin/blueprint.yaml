@@ -6,7 +6,7 @@ initialize:
     run: |
       mkdir -p "$HOME/go-toolchain"
       curl -fsSL https://go.dev/dl/go1.25.5.linux-amd64.tar.gz | tar -C "$HOME/go-toolchain" -xzf -
-      echo "PATH=$HOME/go-toolchain/go/bin:$PATH" >> "$ENVRC"
+      echo 'PATH=$HOME/go-toolchain/go/bin:$PATH' >> "$ENVRC"
   - name: install sqlite3 CLI (needed to load checked-in .sql fixtures during `go test`)
     run: sudo apt-get update -qq && sudo apt-get install -y sqlite3
 # Install project dependencies (runs during builds, surfaced to agent at session start).
