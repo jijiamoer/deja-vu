@@ -76,6 +76,13 @@
 <p>name the event that fired, which is why the hooks emit <code>hook_event_name</code> from</p>
 <p>the payload rather than their compiled-in names; on Claude&#39;s events nothing</p>
 <p>changes.</p>
+<p><code>devin-plugin/</code> in this repo ships the same wiring as a Devin plugin —</p>
+<p><code>.devin-plugin/plugin.json</code> with the MCP server, <code>hooks.json</code>, and the skill —</p>
+<p>installed with <code>devin plugins install vshulcz/deja-vu#devin-plugin</code>. In Devin&#39;s</p>
+<p>cloud sessions plugin hooks cannot fire SessionStart or SessionEnd, so the</p>
+<p>opening digest and the end-of-session marker are CLI-only there; <code>deja install</code></p>
+<p><code>devin-auto</code> stays the recommended path. Where both are present the plugin&#39;s</p>
+<p>hooks see the wiring in <code>~/.config/devin/config.json</code> and stand down.</p>
 <p><strong>Last verified:</strong> 2026-10-07 (Devin CLI 3000.11.3)</p>
 <h2 id="known-quirks-and-drift">Known quirks and drift</h2>
 <ul>
