@@ -10,8 +10,9 @@
 -- edit call, one unmarked system message (injected hook context), and a
 -- compacted replay of the user turn under the same message_id — the dedupe
 -- the chain walk exists for.
--- Row 2 (registry-devin-sub) has the main chain plus a side chain the main
--- one cannot reach — a run_subagent run sharing the parent's node table.
+-- Row 2 (registry-devin-sub) has the main chain plus two side chains the
+-- main one cannot reach: the run_subagent run subagent_heads declares, and
+-- an orphan chain a rewind left behind that no head row names.
 -- Row 3 (registry-devin-hidden) is hidden=1 and must not be read.
 
 create table sessions (
@@ -39,6 +40,14 @@ create table message_nodes (
     chat_message text not null,
     created_at integer,
     metadata text
+);
+
+create table subagent_heads (
+    session_id text not null,
+    agent_id text not null,
+    chain_node_id integer not null,
+    updated_at integer not null,
+    primary key (session_id, agent_id)
 );
 
 create table prompt_history (
@@ -96,7 +105,9 @@ insert into message_nodes (session_id, node_id, parent_node_id, chat_message, cr
 
 -- registry-devin-sub: 9-13 the main chain, 14-15 the subagent's own chain —
 -- unreachable from the main head, rooted on a null parent the way every
--- chain in the table starts.
+-- chain in the table starts, and declared by its subagent_heads row. Nodes
+-- 16-17 are a chain a rewind orphaned: new message_ids, no head row, still
+-- a conversation the harness wrote.
 insert into message_nodes (session_id, node_id, parent_node_id, chat_message, created_at, metadata) values
 ('registry-devin-sub', 9, null,
  '{"message_id":"p-sys","role":"system","content":"<system_info>parent</system_info>"}',
@@ -118,7 +129,15 @@ insert into message_nodes (session_id, node_id, parent_node_id, chat_message, cr
  1785600106, null),
 ('registry-devin-sub', 15, 14,
  '{"message_id":"w-a","role":"assistant","content":"registry-worker printed"}',
- 1785600107, null);
+ 1785600107, null),
+('registry-devin-sub', 16, null,
+ '{"message_id":"rw-u","role":"user","content":"earlier draft of the ask"}',
+ 1785600108, null),
+('registry-devin-sub', 17, 16,
+ '{"message_id":"rw-a","role":"assistant","content":"earlier draft of the answer"}',
+ 1785600109, null);
+
+insert into subagent_heads values ('registry-devin-sub', 'ag-worker', 15, 1785600107);
 
 -- registry-devin-hidden: one ordinary chain under a hidden row.
 insert into message_nodes (session_id, node_id, parent_node_id, chat_message, created_at, metadata) values

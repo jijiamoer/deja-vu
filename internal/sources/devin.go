@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 	"time"
 
@@ -42,10 +43,13 @@ import (
 // `is_system_prefix: true`; injected context — a hook's, a completed
 // subagent's report — carries no flag and is kept.
 //
-// Subagent runs share the parent's node table: their chains are the copies
-// the main chain cannot reach, the same dedupe applied to chains rooted
-// outside it. `run_subagent` is not resumable, so a subagent's id is
-// `<session>:<chain root's message id>` and its Parent the session id.
+// Subagent runs share the parent's node table. Builds that write
+// `subagent_heads` declare each run's stable `agent_id` and the node its
+// chain ends on; builds that never did leave only the chains the main one
+// cannot reach, which the leaf heuristic walks. `run_subagent` is not
+// resumable, so a subagent's id is `<session>:<agent_id>` when declared and
+// `<session>:<chain root's message id>` when it is not, and its Parent the
+// session id.
 //
 // Read off Devin CLI 3000.11.3; `devin --resume <id>` takes the sessions
 // row's id. On Windows the store lives under %LOCALAPPDATA%\devin, on macOS
@@ -139,8 +143,15 @@ func parseDevinDBWhere(db, where string) ([]model.Session, error) {
 	if fi, err := os.Stat(db); err != nil || fi.Size() == 0 {
 		return nil, nil
 	}
+	// `hidden` landed after the first builds that wrote this store; a column
+	// the query names but the schema lacks fails the whole read. Probe once
+	// and emit a literal for what is missing.
+	hidden := "hidden"
+	if !devinDBHasColumn(db, "sessions", "hidden") {
+		hidden = "0"
+	}
 	q := `select json_object('id',id,'dir',working_directory,'title',title,` +
-		`'created',created_at,'updated',last_activity_at,'head',main_chain_id,'hidden',hidden)` +
+		`'created',created_at,'updated',last_activity_at,'head',main_chain_id,'hidden',` + hidden + `)` +
 		` from sessions` + where + ` order by last_activity_at`
 	cmd, stopRead := sqliteReadCmd(db, q)
 	defer stopRead()
@@ -180,7 +191,7 @@ func parseDevinDBWhere(db, where string) ([]model.Session, error) {
 			_ = cmd.Wait()
 			return nil, err
 		}
-		sides := devinSessionChains(&s, nodes, r.Head)
+		sides := devinSessionChains(&s, nodes, r.Head, devinSubagentHeads(db, r.ID))
 		devinPromptHistory(&s, db)
 		if len(s.Messages) == 0 && len(nodes) == 0 {
 			continue
@@ -293,11 +304,53 @@ func devinChain(nodes map[int64]devinNode, head int64) []devinNode {
 	return rev
 }
 
+// devinSubHead is one row of subagent_heads: a run's stable agent id and
+// the chain node it currently ends on.
+type devinSubHead struct {
+	Agent string `json:"agent"`
+	Node  int64  `json:"node"`
+}
+
+// devinSubagentHeads reads the session's declared subagent runs. Builds that
+// predate the table have none — the query failure reads as empty, and the
+// leaf heuristic below still finds their chains.
+func devinSubagentHeads(db, sid string) []devinSubHead {
+	if !devinDBTableExists(db, "subagent_heads") {
+		return nil
+	}
+	out, err := sqliteOutput(db, `select json_object('agent',agent_id,'node',chain_node_id)`+
+		` from subagent_heads where session_id = '`+strings.ReplaceAll(sid, "'", "''")+`'`)
+	if err != nil {
+		return nil
+	}
+	heads, err := sqliteObjects[devinSubHead](out)
+	if err != nil {
+		return nil
+	}
+	return heads
+}
+
+// devinDBTableExists reports whether the store names the table at all.
+func devinDBTableExists(db, table string) bool {
+	out, err := sqliteOutput(db, `select count(*) from sqlite_master where type='table' and name='`+table+`'`)
+	return err == nil && strings.TrimSpace(string(out)) != "0"
+}
+
+// devinDBHasColumn reports whether a table carries the column — older
+// sessions.db schemas predate `hidden`, and naming a missing column in the
+// sessions query fails the whole store read.
+func devinDBHasColumn(db, table, column string) bool {
+	out, err := sqliteOutput(db, `select count(*) from pragma_table_info('`+table+`') where name='`+column+`'`)
+	return err == nil && strings.TrimSpace(string(out)) != "0"
+}
+
 // devinSessionChains fills s.Messages from the session's chains: the main
 // one from head (or the newest node when the row names none), then every
 // chain the main one does not reach — the subagent runs — appended as their
-// own messages on sub-sessions the caller appends after s.
-func devinSessionChains(s *model.Session, nodes []devinNode, head *int64) []model.Session {
+// own messages on sub-sessions the caller appends after s. Declared
+// subagent_heads rows name runs directly; the leaf heuristic covers builds
+// that never wrote the table and whatever it misses.
+func devinSessionChains(s *model.Session, nodes []devinNode, head *int64, heads []devinSubHead) []model.Session {
 	byID := make(map[int64]devinNode, len(nodes))
 	children := map[int64]bool{}
 	var maxID int64 = -1
@@ -332,7 +385,6 @@ func devinSessionChains(s *model.Session, nodes []devinNode, head *int64) []mode
 	// such leaf's chain is walked once — the deepest leaf first, so the
 	// copy whose build ran longest is the one emitted and the rest have
 	// nothing left to say (every one of their message_ids is already out).
-	var sides []model.Session
 	// Leaves, deepest first: a side chain's best copy ends on the leaf its
 	// last build wrote, which is the one with the highest node_id under
 	// that root.
@@ -343,12 +395,39 @@ func devinSessionChains(s *model.Session, nodes []devinNode, head *int64) []mode
 		}
 		leaves = append(leaves, n)
 	}
-	for i := 0; i < len(leaves); i++ {
-		for j := i + 1; j < len(leaves); j++ {
-			if leaves[j].nodeID > leaves[i].nodeID {
-				leaves[i], leaves[j] = leaves[j], leaves[i]
-			}
+	sort.Slice(leaves, func(i, j int) bool { return leaves[i].nodeID > leaves[j].nodeID })
+	// Declared subagent runs first: the table names each run by an agent id
+	// that survives a rebuild of its chain, which the message-derived id
+	// below cannot do. Their chains are walked here so the leaf pass sees
+	// their message_ids as spoken for.
+	var sides []model.Session
+	emitSub := func(chain []devinNode, id string) bool {
+		if len(chain) == 0 {
+			return false
 		}
+		sub := model.Session{
+			Harness: "devin", Kind: "subagent",
+			ID:      s.ID + ":" + id,
+			Parent:  s.ID,
+			Project: s.Project,
+			Path:    s.Path,
+		}
+		subExits := commandExits{}
+		if !IndexCommands() {
+			subExits = nil
+		}
+		devinEmitChain(&sub, chain, subExits)
+		if len(sub.Messages) == 0 {
+			return false
+		}
+		for _, n := range chain {
+			emitted[n.msgID] = true
+		}
+		sides = append(sides, sub)
+		return true
+	}
+	for _, hd := range heads {
+		emitSub(devinChain(byID, hd.Node), hd.Agent)
 	}
 	for _, leaf := range leaves {
 		chain := devinChain(byID, leaf.nodeID)
@@ -362,25 +441,10 @@ func devinSessionChains(s *model.Session, nodes []devinNode, head *int64) []mode
 		if !fresh || len(chain) == 0 {
 			continue
 		}
-		root := chain[0]
-		sub := model.Session{
-			Harness: "devin", Kind: "subagent",
-			ID:      s.ID + ":" + shortDevinID(root.msgID),
-			Parent:  s.ID,
-			Project: s.Project,
-			Path:    s.Path,
-		}
-		subExits := commandExits{}
-		if !IndexCommands() {
-			subExits = nil
-		}
-		devinEmitChain(&sub, chain, subExits)
-		if len(sub.Messages) > 0 {
-			for _, n := range chain {
-				emitted[n.msgID] = true
-			}
-			sides = append(sides, sub)
-		}
+		// A rewind or an edit can leave a side chain whose messages got new
+		// ids — it looks like a run nobody declared. It still carries a
+		// conversation the harness wrote, and dropping it loses it quietly.
+		emitSub(chain, shortDevinID(chain[0].msgID))
 	}
 	return sides
 }
@@ -428,13 +492,18 @@ func devinEmitChain(s *model.Session, chain []devinNode, exits commandExits) {
 			// The prefix scaffolding — the system prompt and the skills
 			// catalogue re-emitted at every turn — is marked is_system_prefix
 			// and dropped; what carries no mark is context the session was
-			// handed, which is the record of what the model was told.
+			// handed, which is the record of what the model was told. It rides
+			// on the same switch tool output does — it is the same kind of
+			// record (role tool_output), and a user who asked for none of it
+			// does not get only the branch that names a tool.
 			if pref, _ := n.msg["__prefix__"].(bool); pref {
 				break
 			}
-			if txt := devinContentText(n.msg["content"]); strings.TrimSpace(txt) != "" {
-				s.Touch(t)
-				s.Messages = append(s.Messages, model.Message{Role: RoleToolOutput, Text: capParsedMessage(txt), Time: t})
+			if IndexToolOutput() {
+				if txt := devinContentText(n.msg["content"]); strings.TrimSpace(txt) != "" {
+					s.Touch(t)
+					s.Messages = append(s.Messages, model.Message{Role: RoleToolOutput, Text: capParsedMessage(txt), Time: t})
+				}
 			}
 		}
 	}
@@ -454,7 +523,7 @@ func devinToolCalls(v any) []any {
 			continue
 		}
 		name, _ := m["name"].(string)
-		args, _ := m["arguments"].(map[string]any)
+		args := devinCallArgs(m["arguments"])
 		if name == "" || args == nil {
 			continue
 		}
@@ -465,6 +534,22 @@ func devinToolCalls(v any) []any {
 		out = append(out, call)
 	}
 	return out
+}
+
+// devinCallArgs accepts a call's arguments as an object or a JSON-encoded
+// string — some builds persist the serialized form, and silently dropping
+// the call loses its whole work record.
+func devinCallArgs(v any) map[string]any {
+	switch a := v.(type) {
+	case map[string]any:
+		return a
+	case string:
+		var m map[string]any
+		if json.Unmarshal([]byte(a), &m) == nil && m != nil {
+			return m
+		}
+	}
+	return nil
 }
 
 // devinExitCode reads a shell result's code off the tool node's metadata:

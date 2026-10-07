@@ -160,18 +160,22 @@ func TestParseDevinDBReadsSideChainsAsSubagents(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var parent, worker int
+	var parent, worker, rewind int
 	for i := range sessions {
 		switch {
 		case sessions[i].ID == "registry-devin-sub":
 			parent = i
-		case strings.HasPrefix(sessions[i].ID, "registry-devin-sub:"):
+		case sessions[i].ID == "registry-devin-sub:ag-worker":
 			worker = i
+		case strings.HasPrefix(sessions[i].ID, "registry-devin-sub:"):
+			rewind = i
 		}
 	}
 	if sessions[parent].Kind != "" || sessions[parent].Parent != "" {
 		t.Fatalf("main chain = %#v", sessions[parent])
 	}
+	// A subagent_heads row names the run: its sub-session takes the stable
+	// agent id, not a message-derived one.
 	w := sessions[worker]
 	if w.Kind != "subagent" || w.Parent != "registry-devin-sub" || w.Harness != "devin" {
 		t.Fatalf("subagent = %#v", w)
@@ -184,6 +188,21 @@ func TestParseDevinDBReadsSideChainsAsSubagents(t *testing.T) {
 	}
 	if !sawWorker {
 		t.Fatalf("worker chain has no assistant turn: %#v", w.Messages)
+	}
+	// The orphan chain no head row declares still surfaces through the leaf
+	// walk — a rewind left it behind, and silent loss is not the trade.
+	r := sessions[rewind]
+	if r.Kind != "subagent" || r.Parent != "registry-devin-sub" {
+		t.Fatalf("rewind chain = %#v", r)
+	}
+	var sawRewind bool
+	for _, m := range r.Messages {
+		if m.Text == "earlier draft of the answer" {
+			sawRewind = true
+		}
+	}
+	if !sawRewind {
+		t.Fatalf("orphan chain dropped: %#v", r.Messages)
 	}
 	// The main chain must not carry the worker's rows, and vice versa.
 	for _, m := range sessions[parent].Messages {
@@ -219,15 +238,16 @@ func TestParseDevinDBSinceFiltersStaleSessions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(sessions) != 2 || sessions[0].ID != "registry-devin-sub" || sessions[1].Parent != "registry-devin-sub" {
+	if len(sessions) != 3 || sessions[0].ID != "registry-devin-sub" ||
+		sessions[1].Parent != "registry-devin-sub" || sessions[2].Parent != "registry-devin-sub" {
 		t.Fatalf("since-filtered sessions = %#v", sessions)
 	}
 	all, err := ParseDevinDBSince(db, time.Time{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(all) != 3 {
-		t.Fatalf("zero since = %d sessions, want 3", len(all))
+	if len(all) != 4 {
+		t.Fatalf("zero since = %d sessions, want 4", len(all))
 	}
 }
 
@@ -428,4 +448,74 @@ func sessionText(s *model.Session) string {
 		b.WriteByte('\n')
 	}
 	return b.String()
+}
+
+func TestParseDevinDBReadsStoreWithoutHiddenColumn(t *testing.T) {
+	devinHome(t)
+	// Stores the first builds wrote have no `hidden` column; a query naming
+	// it fails the whole read, so the schema is probed before it is named.
+	db, _ := devinTestDB(t, `
+create table sessions (
+    id text primary key, working_directory text, title text,
+    created_at integer, last_activity_at integer, main_chain_id integer
+);
+create table message_nodes (
+    row_id integer primary key autoincrement,
+    session_id text not null, node_id integer not null,
+    parent_node_id integer, chat_message text not null,
+    created_at integer, metadata text
+);
+insert into sessions values ('old-devin','/w','old schema store',1785600000,1785600010,1);
+insert into message_nodes (session_id, node_id, parent_node_id, chat_message, created_at) values
+('old-devin', 1, null, '{"message_id":"o-u","role":"user","content":"schema predates hidden"}', 1785600001);
+`)
+	sessions, err := ParseDevinDB(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := findDevinSession(sessions, "old-devin")
+	if s == nil {
+		t.Fatalf("old-schema store not read: %#v", sessions)
+	}
+	if !strings.Contains(sessionText(s), "schema predates hidden") {
+		t.Fatalf("old-schema store dropped its chain: %#v", s.Messages)
+	}
+}
+
+func TestParseDevinDBHonoursIndexToolOutput(t *testing.T) {
+	devinHome(t)
+	t.Setenv("DEJA_INDEX_TOOL_OUTPUT", "0")
+	db, _ := devinTestDB(t, devinFixtureSQL(t))
+	sessions, err := ParseDevinDB(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := findDevinSession(sessions, "registry-devin")
+	if s == nil {
+		t.Fatalf("registry-devin not in %#v", sessions)
+	}
+	// With tool output off, neither the tool result nor the unmarked system
+	// context lands — the switch is one switch, not one per role.
+	for _, m := range s.Messages {
+		if m.Role == "tool-output" {
+			t.Fatalf("tool output indexed with the flag off: %q", m.Text)
+		}
+	}
+}
+
+func TestDevinToolCallsReadsSerializedArguments(t *testing.T) {
+	// Some builds persist arguments as the encoded JSON, not an object;
+	// dropping the call loses its whole work record.
+	calls := devinToolCalls([]any{
+		map[string]any{"id": "c1", "name": "exec", "arguments": `{"command":"go test ./x"}`},
+		map[string]any{"id": "c2", "name": "exec", "arguments": "not json"},
+		map[string]any{"id": "c3", "name": "read", "arguments": map[string]any{"file_path": "/w/x.go"}},
+	})
+	if len(calls) != 2 {
+		t.Fatalf("tool calls = %#v", calls)
+	}
+	in, _ := calls[0].(map[string]any)["input"].(map[string]any)
+	if in["command"] != "go test ./x" {
+		t.Fatalf("serialized arguments = %#v", calls[0])
+	}
 }
