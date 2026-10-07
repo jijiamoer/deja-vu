@@ -187,10 +187,7 @@ func runHookToolAfterMode(dir string, stdin io.Reader, stdout io.Writer, plain b
 	// The event it was sent. Claude Code fires PostToolUseFailure for a command
 	// that exited non-zero and drops a reply naming any other event (#4488);
 	// qwen takes either. Everything else gets the name it always had.
-	resp.HookSpecificOutput.HookEventName = "PostToolUse"
-	if input.HookEventName == "PostToolUseFailure" {
-		resp.HookSpecificOutput.HookEventName = input.HookEventName
-	}
+	resp.HookSpecificOutput.HookEventName = replyEventName(input.HookEventName, "PostToolUse", "PostToolUse", "PostToolUseFailure")
 	resp.HookSpecificOutput.AdditionalContext = payload
 	b, err := json.Marshal(resp)
 	if err != nil {
@@ -219,7 +216,6 @@ func isCommandTool(name string) bool {
 		"run_in_terminal",
 		// Devin's shell tool.
 		"exec":
-		return true
 		return true
 	}
 	return false

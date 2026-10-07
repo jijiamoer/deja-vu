@@ -41,6 +41,19 @@ type sessionStartHookResponse struct {
 	} `json:"hookSpecificOutput"`
 }
 
+// replyEventName picks the hook event a reply claims. Devin rejects a
+// reply that names a different event than the one that fired, so a payload
+// naming one of this hook's real events is honored — but only those. A host
+// that puts its own spelling in hook_event_name (Cursor's camelCase
+// postToolUse, Gemini's BeforeAgent) would otherwise have its reply renamed
+// to something its own hook contract never produced.
+func replyEventName(sent, fallback string, allowed ...string) string {
+	if slices.Contains(allowed, sent) {
+		return sent
+	}
+	return fallback
+}
+
 type precompactHookInput struct {
 	SessionID      string   `json:"session_id"`
 	ConversationID string   `json:"conversation_id"`
@@ -438,9 +451,9 @@ func runHookContextMode(dir string, plain, once bool) error {
 		// has no MCP of its own, and a lead naming recall_context sent the
 		// model to "Tool recall_context not found" on every first turn (#4584).
 		Shell bool `json:"deja_shell"`
-		// The event that fired, when the payload names one. Claude sends
-		// nothing here; Devin sends hook_event_name and rejects a reply that
-		// names a different event back.
+		// The event that fired, when the payload names one. Devin sends
+		// hook_event_name and rejects a reply that names a different event
+		// back; Claude names it too, in the same canonical spelling.
 		HookEventName string `json:"hook_event_name"`
 	}
 	// Best effort, as every hook is — but not silent about it. A payload deja
@@ -455,11 +468,10 @@ func runHookContextMode(dir string, plain, once bool) error {
 	// The reply goes out under the event it arrived on, not under
 	// SessionStart by right: Devin fires this hook on PostCompaction too,
 	// and drops a reply that names the wrong event back (verified on
-	// 3000.11.3). Claude's payloads name no event at all.
-	eventName := input.HookEventName
-	if eventName == "" {
-		eventName = "SessionStart"
-	}
+	// 3000.11.3). Only canonical names echo — hosts that spell their own
+	// events here (Cursor's camelCase sessionStart, Gemini's BeforeAgent)
+	// get the fallback they got before the echo existed.
+	eventName := replyEventName(input.HookEventName, "SessionStart", "SessionStart", "PostCompaction")
 	shape := hookToolClaude
 	if plain {
 		shape = hookToolPlain
@@ -498,7 +510,6 @@ func runHookContextMode(dir string, plain, once bool) error {
 		if delivered, err := emitCompactionRecovery(dir, input.SessionID, hookProjectPath(input.CWD, input.WorkspaceRoots), eventName, shape, os.Stdout); delivered {
 			return err
 		}
-	}
 	}
 	if once {
 		input.Once = true
