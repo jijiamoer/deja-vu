@@ -1,7 +1,7 @@
 # Devin CLI
 
 - **ID**: `devin`
-- **Store**: `<data>/devin/cli/sessions.db` — `~/.local/share/devin/cli/sessions.db` on Linux, `~/Library/Application Support/devin/cli/sessions.db` on macOS, `%LOCALAPPDATA%\devin\cli\sessions.db` on Windows — with `cli_sessions.db` beside it holding the pre-rename copy
+- **Store**: `<data>/devin/cli/sessions.db` — `~/.local/share/devin/cli/sessions.db` on Linux (verified); `~/Library/Application Support/devin/cli/sessions.db` on macOS and `%LOCALAPPDATA%\devin\cli\sessions.db` on Windows are the platform conventions the binary's own strings name — unverified on those platforms — with `cli_sessions.db` beside it holding the pre-rename copy
 - **Summaries**: `<data>/devin/summaries/<session_id>.md`
 - **Read override**: `DEJA_DEVIN_DB` replaces the store path
 - **Format**: SQLite, two tables per conversation — `sessions` for the row, `message_nodes` for the turns — plus `prompt_history` for the inline shell commands run between turns
@@ -36,7 +36,7 @@ its skill directories. `deja install devin-auto` additionally writes Claude-
 shaped hooks into the `"hooks"` key of `~/.config/devin/config.json`:
 SessionStart and PostCompaction run `hook-context`, UserPromptSubmit runs
 `hook-prompt`, PostToolUse runs `hook-tool` (matcher `exec|edit|write|
-apply_patch|notebook_edit|run_subagent`) and `hook-tool-after` (matcher
+apply_patch|notebook_edit`) and `hook-tool-after` (matcher
 `^exec$`), and SessionEnd runs `hook-session-end`. Devin's hook replies must
 name the event that fired, which is why the hooks emit `hook_event_name` from
 the payload rather than their compiled-in names; on Claude's events nothing
@@ -44,9 +44,11 @@ changes.
 
 `devin-plugin/` in this repo ships the same wiring as a Devin plugin —
 `.devin-plugin/plugin.json` with the MCP server, `hooks.json`, and the skill —
-installed with `devin plugins install vshulcz/deja-vu#devin-plugin`. In Devin's
-cloud sessions plugin hooks cannot fire SessionStart or SessionEnd, so the
-opening digest and the end-of-session marker are CLI-only there; `deja install
+installed with `devin plugins install vshulcz/deja-vu#devin-plugin`. Devin's
+cloud sessions are reported to fire plugin hooks on a smaller event set —
+SessionStart and SessionEnd among the ones not delivered, though the plugin
+docs are a closed beta and the list is not public — so on those the opening
+digest and the end-of-session marker may be CLI-only; `deja install
 devin-auto` stays the recommended path. Where both are present the plugin's
 hooks see the wiring in `~/.config/devin/config.json` and stand down.
 
@@ -65,9 +67,11 @@ hooks see the wiring in `~/.config/devin/config.json` and stand down.
 - **A rebuilt chain is duplication, not replay.** Nodes after a rebuild repeat
   earlier messages under the same `message_id`; dedupe by `message_id`, not
   position, or a compacted session reads its user turns twice.
-- **`subagent_heads` exists but is empty** on the observed builds — side
-  chains are found structurally, as the NULL-parent roots the main chain never
-  reaches.
+- **`subagent_heads` exists but is empty** on the observed builds. When a
+  build populates it, its declared `agent_id` names the sub-session; when it
+  stays empty, side chains are found structurally — the NULL-parent roots
+  the main chain never reaches, which is also how chains a rewind orphaned
+  still surface.
 - **`PostToolUse` is also the failure event.** Devin has no PostToolUseFailure:
   a nonzero exit arrives as an ordinary PostToolUse with `success: false`, so
   one `hook-tool-after` wiring covers both paths.

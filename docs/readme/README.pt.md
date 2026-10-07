@@ -15,7 +15,7 @@ ao agente que está trabalhando agora.</p>
 
 <p align="center"><sub><em>Ninguém pesquisou nada: o agente chamou o deja por conta própria. Duas execuções reais, modelo real, chamadas de ferramenta reais, sobre um corpus sintético: o histórico de ninguém é publicado.</em></sub></p>
 
-<p align="center"><b>O deja já chega cheio: o histórico que 38 agentes escreveram, indexado em segundos, sem modelo e sem uma etapa separada de captura.</b></p>
+<p align="center"><b>O deja já chega cheio: o histórico que 39 agentes escreveram, indexado em segundos, sem modelo e sem uma etapa separada de captura.</b></p>
 
 <p align="center"><b>A memória para agentes de código mais precisa, mais barata de usar e mais rápida que conseguimos medir.</b></p>
 

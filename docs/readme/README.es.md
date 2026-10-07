@@ -15,7 +15,7 @@ al agente que está trabajando ahora.</p>
 
 <p align="center"><sub><em>Nadie buscó nada: el agente llamó a deja por su cuenta. Dos ejecuciones reales, modelo real, llamadas a herramientas reales, sobre un corpus sintético: no se publica el historial de nadie.</em></sub></p>
 
-<p align="center"><b>deja está llena desde el primer minuto: el historial que 38 agentes ya escribieron, indexado en segundos, sin modelo y sin un paso aparte de captura.</b></p>
+<p align="center"><b>deja está llena desde el primer minuto: el historial que 39 agentes ya escribieron, indexado en segundos, sin modelo y sin un paso aparte de captura.</b></p>
 
 <p align="center"><b>La memoria para agentes de código más precisa, la más barata de usar y la más rápida que pudimos medir.</b></p>
 

@@ -15,7 +15,7 @@ deja aylar öncesi dahil hepsini indeksler ve önemli kısmı
 
 <p align="center"><sub><em>Kimse arama yapmadı; ajan deja'yı kendisi çağırdı. Gerçek model ve gerçek araç çağrılarıyla iki gerçek çalıştırma, sentetik bir külliyat üzerinde: kimsenin geçmişi yayımlanmıyor.</em></sub></p>
 
-<p align="center"><b>deja ilk dakikadan itibaren dolu: 38 ajanın çoktan yazdığı geçmiş, saniyeler içinde indekslenir, model de ayrı bir toplama adımı da gerekmez.</b></p>
+<p align="center"><b>deja ilk dakikadan itibaren dolu: 39 ajanın çoktan yazdığı geçmiş, saniyeler içinde indekslenir, model de ayrı bir toplama adımı da gerekmez.</b></p>
 
 <p align="center"><b>Ölçebildiğimiz kodlama ajanı hafızaları arasında en isabetlisi, çalıştırması en ucuzu ve en hızlısı.</b></p>
 

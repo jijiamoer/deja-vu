@@ -49,6 +49,10 @@ const (
 	// The CodeBuddy marketplace installs from the default branch too, so the
 	// version committed here is the one its listing shows.
 	codebuddyPlugin = "codebuddy-plugin/.codebuddy-plugin/plugin.json"
+	// The Devin plugin installs from the default branch the same way
+	// (`devin plugins install vshulcz/deja-vu#devin-plugin`), so the version
+	// committed here is the one `devin plugins list` reports.
+	devinPlugin = "devin-plugin/.devin-plugin/plugin.json"
 	// The Gemini gallery crawls the manifest at the repository root and shows
 	// its version, and `gemini extensions install` reads the same file.
 	geminiExtension = "gemini-extension.json"
@@ -165,6 +169,7 @@ func targets() map[string]func(pins) ([]byte, error) {
 		claudePlugin:      renderPluginVersion(claudePlugin),
 		claudeAgentPlugin: renderPluginVersion(claudeAgentPlugin),
 		codebuddyPlugin:   renderPluginVersion(codebuddyPlugin),
+		devinPlugin:       renderPluginVersion(devinPlugin),
 		geminiExtension:   renderPluginVersion(geminiExtension),
 		kimiPlugin:        renderPluginVersion(kimiPlugin),
 		kimiPacked:        renderPluginVersion(kimiPacked),
