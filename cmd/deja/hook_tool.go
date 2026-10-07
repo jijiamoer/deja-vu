@@ -381,7 +381,10 @@ func toolHookLineSkipping(dir, cwd string, input toolHookInput, used func(string
 		// Gemini CLI and Qwen Code read with read_file, and Gemini edits with
 		// replace. Both are wired after the tool only: neither hands a
 		// PreToolUse answer to the model.
-		"read_file", "replace":
+		"read_file", "replace",
+		// Devin's notebook editor names its file notebook_path, folded into
+		// FilePath above, and its matcher already fires on the lowercase name.
+		"notebook_edit":
 		return fileLineFor(dir, cwd, input)
 	case "Read":
 		// CodeBuddy and the other Claude-shaped hosts whose only channel is
