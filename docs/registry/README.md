@@ -46,6 +46,7 @@ This registry records observed on-disk session formats for the harnesses that de
 | [Hermes](hermes.md) | SQLite state store, and Postgres when configured |
 | [DeepSeek Harness](deepseek.md) | append-only session log, zstd-framed JSONL |
 | [Zed](zed.md) | SQLite thread store, zstd-compressed bodies |
+| [Devin CLI](devin.md) | one SQLite store of linked message nodes; subagents read as sessions of their own |
 
 ## Reporting drift
 

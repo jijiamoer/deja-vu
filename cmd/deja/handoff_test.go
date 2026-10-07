@@ -59,6 +59,8 @@ func TestHandoffCommandTable(t *testing.T) {
 		"crush": {"crush", "run", "P"},
 		// Antigravity's CLI is `agy`, verified on 1.1.7.
 		"antigravity": {"agy", "-i", "P"},
+		// Devin CLI's one-shot print mode: -p answers once and exits.
+		"devin": {"devin", "-p", "P"},
 	}
 	for target, want := range cases {
 		argv, ok := handoffCommand(target, "P")

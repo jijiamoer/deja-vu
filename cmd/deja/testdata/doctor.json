@@ -345,6 +345,16 @@
       "indexed_sessions": 0
     },
     {
+      "name": "devin",
+      "state": "missing",
+      "paths": [
+        "<tmp>/home/.local/share/devin/cli/sessions.db",
+        "<tmp>/home/.local/share/devin/cli/cli_sessions.db"
+      ],
+      "files": 0,
+      "indexed_sessions": 0
+    },
+    {
       "name": "deja",
       "state": "missing",
       "paths": [
@@ -490,6 +500,11 @@
       "name": "zed",
       "state": "config-missing",
       "path": "<tmp>/home/.config/zed/settings.json"
+    },
+    {
+      "name": "devin",
+      "state": "config-missing",
+      "path": "<tmp>/home/.config/devin/mcp_config.json"
     },
     {
       "name": "deepseek",
@@ -682,6 +697,11 @@
       "name": "grok",
       "state": "missing",
       "path": "<tmp>/home/.grok/hooks/deja.json"
+    },
+    {
+      "name": "devin",
+      "state": "missing",
+      "path": "<tmp>/home/.config/devin/config.json"
     },
     {
       "name": "kiro",

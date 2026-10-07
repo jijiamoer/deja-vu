@@ -34,6 +34,7 @@ var readmeGuidanceNames = map[string]string{
 	"prime":       "prime-agent",
 	"deepseek":    "DeepSeek Harness",
 	"zed":         "Zed",
+	"devin":       "Devin CLI",
 	"continue":    "Continue",
 	"crush":       "Crush",
 	"muse":        "Muse Code",

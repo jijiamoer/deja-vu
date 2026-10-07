@@ -256,7 +256,7 @@ func resumeCommand(s model.Session) (string, string, error) {
 	// id deja gives it is one they have never seen (#4483).
 	// Muse's child logs are the same: `muse resume <child>` answers "has no
 	// saved log" (#4710).
-	if s.Kind == "subagent" && (s.Harness == "kimi" || s.Harness == "qwen" || s.Harness == "muse" || s.Harness == "codebuddy") && s.Parent != "" {
+	if s.Kind == "subagent" && (s.Harness == "kimi" || s.Harness == "qwen" || s.Harness == "muse" || s.Harness == "codebuddy" || s.Harness == "devin") && s.Parent != "" {
 		return "", "", fmt.Errorf("session %s is a sub-agent run, which %s does not reopen on its own — `deja resume %s` reopens the session that spawned it", digest.Short(s.ID), s.Harness, s.Parent)
 	}
 	// Nor a Kimi /btw side question, which runs in a fork of the session it
@@ -495,6 +495,11 @@ func resumeCommand(s model.Session) (string, string, error) {
 		// reads like deja is missing something. Both are settled answers, and
 		// the registry has carried the reason all along.
 		return "", "", fmt.Errorf("zed threads reopen from the editor's own history — no zed flag takes a thread id")
+	case "devin":
+		// `devin --resume <id>` finds the session in its one global store, so
+		// the recorded directory is a preference, not a requirement: reopen
+		// where the session ran when that directory is still here.
+		return existingDir(resumeRecordedDir(s)), "devin --resume " + s.ID, nil
 	case "deepseek":
 		return "", "", fmt.Errorf("neither of DeepSeek Harness's two apps takes a session id, so there is nothing to reopen by")
 	case "codewhale":
@@ -702,6 +707,9 @@ func resumeRecordedDir(s model.Session) string {
 			return sources.KiroDBSessionDir(s.Path, s.ID)
 		}
 		return sources.KiroSessionDir(s.Path)
+	case "devin":
+		// The sessions row's own working_directory.
+		return sources.DevinSessionDir(s.Path, s.ID)
 	case "continue":
 		return sources.ContinueSessionDir(s.Path)
 	case "codewhale":

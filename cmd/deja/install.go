@@ -931,6 +931,10 @@ func installTarget(target, exe string, uninstall bool) (installResult, error) {
 		return wroteAll(mcp, hooks), nil
 	case "zed":
 		return installZedMCP(sources.ZedSettingsPath(), exe, uninstall)
+	case "devin":
+		return installDevinMCP(exe, uninstall)
+	case "devin-auto":
+		return installDevinAuto(exe, uninstall)
 	case "cline":
 		return installMCPJSON(sources.ClineMCPSettingsPath(), exe, uninstall)
 	case "roo":
@@ -5003,6 +5007,9 @@ func installTargetNames() []string {
 		// Zed's agent takes MCP servers and nothing else: no CLI to hand a
 		// prompt to, so there is no -auto pair to install.
 		"zed",
+		// Devin CLI reads Claude-shaped hooks from its own config.json and
+		// MCP servers from mcp_config.json — the pair exists.
+		"devin", "devin-auto",
 		"statusline",
 	}
 	// Not a harness, and deliberately not "-auto": that suffix means a
@@ -5181,6 +5188,10 @@ func existingTargetChecks() map[string]string {
 		"continue": filepath.Join(sources.ContinueRoot(), "sessions"),
 		// Zed's data directory, not the config file deja edits.
 		"zed": sources.ZedRoot(),
+		// The CLI's own versions live under config/devin/cli — a directory
+		// `devin` creates and deja only reads beside, so a machine that merely
+		// installed deja does not look like a Devin machine.
+		"devin": filepath.Join(devinConfigDir(), "cli"),
 		// VS Code's own User folder, which the editor creates on first run;
 		// deja only ever writes inside it.
 		"vscode": vsCodeFirstRoot(),

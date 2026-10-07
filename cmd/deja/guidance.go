@@ -104,6 +104,9 @@ var sharedSkillHarnesses = map[string]bool{
 	// With Claude's copy there too it loads one and starts without a word;
 	// only `muse skills list` notes the other as shadowed.
 	"muse": true,
+	// Devin CLI's bundled docs name ~/.agents/skills among the user-level
+	// skill directories it scans, beside ~/.config/devin/skills.
+	"devin": true,
 }
 
 // sharedSkillPath is the one file all of them read. Claude Code is deliberately

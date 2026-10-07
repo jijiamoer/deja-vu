@@ -216,7 +216,10 @@ func isCommandTool(name string) bool {
 		"shell_command",
 		// VS Code Copilot Chat's terminal tool; its result ends with
 		// "Command exited with code N" when the command failed.
-		"run_in_terminal":
+		"run_in_terminal",
+		// Devin's shell tool.
+		"exec":
+		return true
 		return true
 	}
 	return false

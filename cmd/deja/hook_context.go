@@ -438,6 +438,10 @@ func runHookContextMode(dir string, plain, once bool) error {
 		// has no MCP of its own, and a lead naming recall_context sent the
 		// model to "Tool recall_context not found" on every first turn (#4584).
 		Shell bool `json:"deja_shell"`
+		// The event that fired, when the payload names one. Claude sends
+		// nothing here; Devin sends hook_event_name and rejects a reply that
+		// names a different event back.
+		HookEventName string `json:"hook_event_name"`
 	}
 	// Best effort, as every hook is — but not silent about it. A payload deja
 	// cannot decode carries the session this injection went to, and losing it
@@ -448,6 +452,14 @@ func runHookContextMode(dir string, plain, once bool) error {
 	adoptCopilotHost(payload)
 	input.SessionID = adoptGrok(adoptGrok(input.SessionID, input.grokEnvelope.SessionID), input.ConversationID)
 	input.WorkspaceRoots = adoptGrokRoots(input.WorkspaceRoots, input.WorkspaceRoot)
+	// The reply goes out under the event it arrived on, not under
+	// SessionStart by right: Devin fires this hook on PostCompaction too,
+	// and drops a reply that names the wrong event back (verified on
+	// 3000.11.3). Claude's payloads name no event at all.
+	eventName := input.HookEventName
+	if eventName == "" {
+		eventName = "SessionStart"
+	}
 	shape := hookToolClaude
 	if plain {
 		shape = hookToolPlain
@@ -464,7 +476,7 @@ func runHookContextMode(dir string, plain, once bool) error {
 		if !plain {
 			if line := joinNotes(rewireNote(rewired), joinNotes(stuckWiringNote(stuckWiring), buildNotice(dir))); line != "" {
 				var resp sessionStartHookResponse
-				resp.HookSpecificOutput.HookEventName = "SessionStart"
+				resp.HookSpecificOutput.HookEventName = eventName
 				resp.SystemMessage = line
 				emitHookResponse(resp)
 			}
@@ -483,9 +495,10 @@ func runHookContextMode(dir string, plain, once bool) error {
 	// in parallel: both found the packet undelivered and it arrived twice. The
 	// prompt hook carries it there.
 	if !once {
-		if delivered, err := emitCompactionRecovery(dir, input.SessionID, hookProjectPath(input.CWD, input.WorkspaceRoots), "SessionStart", shape, os.Stdout); delivered {
+		if delivered, err := emitCompactionRecovery(dir, input.SessionID, hookProjectPath(input.CWD, input.WorkspaceRoots), eventName, shape, os.Stdout); delivered {
 			return err
 		}
+	}
 	}
 	if once {
 		input.Once = true
@@ -543,7 +556,7 @@ func runHookContextMode(dir string, plain, once bool) error {
 				return nil
 			}
 			var resp sessionStartHookResponse
-			resp.HookSpecificOutput.HookEventName = "SessionStart"
+			resp.HookSpecificOutput.HookEventName = eventName
 			resp.HookSpecificOutput.AdditionalContext = out
 			// The environment block is not the project's memory, and while a
 			// build runs it is all there is: without this the whole rebuild
@@ -583,7 +596,7 @@ func runHookContextMode(dir string, plain, once bool) error {
 			line = joinNotes(rewireNote(rewired), joinNotes(stuckWiringNote(stuckWiring), joinNotes(withheldEverythingNote(dir, withheld), line)))
 			if line != "" {
 				var resp sessionStartHookResponse
-				resp.HookSpecificOutput.HookEventName = "SessionStart"
+				resp.HookSpecificOutput.HookEventName = eventName
 				resp.SystemMessage = line
 				emitHookResponse(resp)
 			}
@@ -632,7 +645,7 @@ func runHookContextMode(dir string, plain, once bool) error {
 		return nil
 	}
 	var resp sessionStartHookResponse
-	resp.HookSpecificOutput.HookEventName = "SessionStart"
+	resp.HookSpecificOutput.HookEventName = eventName
 	resp.HookSpecificOutput.AdditionalContext = digest
 	// Announce only when the recalled set changed since the last announcement:
 	// injection is recency-ranked, so repeating the same receipt every session
@@ -964,6 +977,11 @@ func hookCWD(fromPayload string) string {
 		return fromPayload
 	}
 	if cwd := os.Getenv("CLAUDE_PROJECT_DIR"); cwd != "" {
+		return cwd
+	}
+	// Devin carries no cwd in a hook payload; its launcher sets
+	// DEVIN_PROJECT_DIR for the hook's own process instead (3000.11.3).
+	if cwd := os.Getenv("DEVIN_PROJECT_DIR"); cwd != "" {
 		return cwd
 	}
 	cwd, _ := os.Getwd()
