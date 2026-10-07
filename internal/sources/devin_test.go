@@ -519,3 +519,44 @@ func TestDevinToolCallsReadsSerializedArguments(t *testing.T) {
 		t.Fatalf("serialized arguments = %#v", calls[0])
 	}
 }
+
+// A subagent_heads table that exists but reads wrong — a schema drifted, a
+// locked page — cannot fail the session: the declared heads come back empty
+// and the leaf heuristic still surfaces the side chains.
+func TestParseDevinDBFallsBackWhenSubagentHeadsMisread(t *testing.T) {
+	devinHome(t)
+	db, _ := devinTestDB(t, `
+create table sessions (
+    id text primary key, working_directory text, backend_type text,
+    model text, agent_mode text, created_at integer, last_activity_at integer,
+    title text, main_chain_id integer, shell_last_seen_index integer,
+    cogs_json text, workspace_dirs text, hidden integer not null default 0,
+    metadata text
+);
+create table message_nodes (
+    row_id integer primary key autoincrement, session_id text not null,
+    node_id integer not null, parent_node_id integer,
+    chat_message text not null, created_at integer, metadata text
+);
+create table subagent_heads (wrong_column text);
+insert into sessions values (
+    's1', '/w/api', 'cli', 'swe-2', 'normal', 1785600000, 1785600090,
+    'a session', 2, 0, null, '["/w/api"]', 0, null
+);
+insert into message_nodes (session_id, node_id, parent_node_id, chat_message, created_at, metadata) values
+    ('s1', 1, null, '{"message_id":"m1","role":"user","content":"the ask"}', 1785600001, '{}'),
+    ('s1', 2, 1,    '{"message_id":"m2","role":"assistant","content":[{"type":"text","text":"the answer"}]}', 1785600002, '{}'),
+    ('s1', 3, null, '{"message_id":"w1","role":"assistant","content":[{"type":"text","text":"a side chain nobody declared"}]}', 1785600003, '{}');
+`)
+	if heads := devinSubagentHeads(db, "s1", true); heads != nil {
+		t.Fatalf("a mis-shaped subagent_heads must read empty, got %#v", heads)
+	}
+	sessions, err := ParseDevinDB(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	side := findDevinSession(sessions, "s1:w1")
+	if side == nil || !strings.Contains(side.Messages[0].Text, "a side chain nobody declared") {
+		t.Fatalf("the undeclared chain did not fall back to the leaf heuristic: %#v", sessions)
+	}
+}
