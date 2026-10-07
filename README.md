@@ -51,7 +51,7 @@ deja install --auto
 ## Highlights
 
 - **Starts full.** Months of history from before you installed it are searchable on day one: `deja "connection pool exhausted"` over gigabytes.
-- **One memory, every agent.** A fix found in Codex comes back in Claude Code, Cursor or opencode; all [thirty-nine agents](#supported-harnesses) read the same index.
+- **One memory, every agent.** A fix found in Codex comes back in Claude Code, Cursor or opencode; all [thirty-eight agents](#supported-harnesses) read the same index.
 - **Nobody has to ask.** Recall arrives at session start, before a file is edited or a command runs, and after a command fails.
 - **Survives compaction.** Over 43 measured compactions the summary kept 77% of the decisions and 0.2% of the commands; deja hands back the rest ([how](docs/compaction.md)).
 - **Indexes the work, not just the talk.** The files each turn opened, the commands with their exit status, the exact spans an edit replaced.
@@ -142,7 +142,7 @@ harness supports, aider's read-only context file, and the Windows `cmd /c deja m
 <details>
 <summary>What gets written into each agent's own guidance file</summary>
 
-Install also writes user-level guidance for the harnesses it detects: Claude Code, Codex, opencode, Gemini CLI, Antigravity, Qwen, Kimi Code, pi, Senpi, Copilot, VS Code Copilot Chat, Cursor, Goose, OpenClaw, Hermes, Roo Code, omp, Amp, prime-agent, DeepSeek Harness, Continue, Crush, CodeBuddy Code, WorkBuddy, Zed, Devin CLI, TRAE CLI, TRAE IDE and Muse Code each get it in their own guidance file (or under the configured `XDG_CONFIG_HOME`). Re-run rewrites deja's skill or marked block without changing surrounding user content. Use `deja install --all --no-guidance` to opt out; Grok Build gets the shared skill in `~/.agents/skills`, which is what it reads; the `~/.grok/GROK.md` written beside it is for the unrelated community CLI that shares that directory. Cursor has no user-level instructions file, so it gets the shared skill in `~/.agents/skills` — one of the four places Cursor reads skills from — read only when something looks relevant rather than every session. Kilo Code, gajae-code, Command Code, Cherry Studio and Reasonix get the skill, and Kiro a steering file, from their own install target.
+Install also writes user-level guidance for the harnesses it detects: Claude Code, Codex, opencode, Gemini CLI, Antigravity, Qwen, Kimi Code, pi, Senpi, Copilot, VS Code Copilot Chat, Cursor, Goose, OpenClaw, Hermes, Roo Code, omp, Amp, prime-agent, DeepSeek Harness, Continue, Crush, CodeBuddy Code, WorkBuddy, Zed, TRAE CLI, TRAE IDE and Muse Code each get it in their own guidance file (or under the configured `XDG_CONFIG_HOME`). Re-run rewrites deja's skill or marked block without changing surrounding user content. Use `deja install --all --no-guidance` to opt out; Grok Build gets the shared skill in `~/.agents/skills`, which is what it reads; the `~/.grok/GROK.md` written beside it is for the unrelated community CLI that shares that directory. Cursor has no user-level instructions file, so it gets the shared skill in `~/.agents/skills` — one of the four places Cursor reads skills from — read only when something looks relevant rather than every session. Kilo Code, gajae-code, Command Code, Cherry Studio and Reasonix get the skill, and Kiro a steering file, from their own install target.
 
 </details>
 
@@ -252,7 +252,7 @@ whether or not the tool is called.
 ## Supported harnesses
 
 <!-- matrix:start -->
-aider &middot; Amp &middot; Antigravity &middot; Claude Code &middot; Cline &middot; Codex CLI &middot; Copilot CLI &middot; VS Code Copilot Chat &middot; Cursor &middot; DeepSeek Harness &middot; Gemini CLI &middot; Goose &middot; Grok Build &middot; Hermes &middot; Kimi Code &middot; omp (Oh My Pi) &middot; OpenClaw &middot; opencode &middot; Continue &middot; Crush &middot; pi &middot; prime-agent (PrimeIntellect) &middot; Qwen Code &middot; Cherry Studio &middot; Senpi &middot; gajae-code &middot; Kimchi Coding &middot; Command Code &middot; ZCode &middot; Kiro &middot; Kilo Code &middot; Roo Code &middot; Zed &middot; Devin CLI &middot; CodeWhale &middot; CodeBuddy Code &middot; Reasonix &middot; TRAE CLI &middot; Muse Code.
+aider &middot; Amp &middot; Antigravity &middot; Claude Code &middot; Cline &middot; Codex CLI &middot; Copilot CLI &middot; VS Code Copilot Chat &middot; Cursor &middot; DeepSeek Harness &middot; Gemini CLI &middot; Goose &middot; Grok Build &middot; Hermes &middot; Kimi Code &middot; omp (Oh My Pi) &middot; OpenClaw &middot; opencode &middot; Continue &middot; Crush &middot; pi &middot; prime-agent (PrimeIntellect) &middot; Qwen Code &middot; Cherry Studio &middot; Senpi &middot; gajae-code &middot; Kimchi Coding &middot; Command Code &middot; ZCode &middot; Kiro &middot; Kilo Code &middot; Roo Code &middot; Zed &middot; CodeWhale &middot; CodeBuddy Code &middot; Reasonix &middot; TRAE CLI &middot; Muse Code.
 
 <details>
 <summary>What each one supports</summary>
@@ -266,38 +266,37 @@ aider &middot; Amp &middot; Antigravity &middot; Claude Code &middot; Cline &mid
 | Cline | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Codex CLI | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Copilot CLI | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| VS Code Copilot Chat | ✅ | ✅ | ✅ | ✅ | ✕ | paste | — |
+| VS Code Copilot Chat | ✅ | ✅ | ✅ | ✅ | ✕ | ✅ | — |
 | Cursor | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | sqlite3 (IDE chats, CLI tool output) |
-| DeepSeek Harness | ✅ | ✅ | ✅ | ✅ | ✕ | paste | zstd |
+| DeepSeek Harness | ✅ | ✅ | ✅ | ✅ | ✕ | ✅ | zstd |
 | Gemini CLI | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Goose | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | deja goose |
 | Grok Build | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | sqlite3 (grok-dev store) |
-| Hermes | ✅ | ✅ | ✅ | ✅ | ✅ | paste | sqlite3 |
+| Hermes | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | sqlite3 |
 | Kimi Code | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | omp (Oh My Pi) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| OpenClaw | ✅ | ✅ | ✅ | ✅ | ✅ | paste | sqlite3 (2026.8+ store); zstd for .zst archives |
+| OpenClaw | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | sqlite3 (2026.8+ store); zstd for .zst archives |
 | opencode | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | sqlite3 |
-| Continue | ✅ | ⚠ | ✅ | ✅ | ✅ | paste | — |
+| Continue | ✅ | ⚠ | ✅ | ✅ | ✅ | ✅ | — |
 | Crush | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | sqlite3 |
 | pi | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | prime-agent (PrimeIntellect) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Qwen Code | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Cherry Studio | ✅ | ✕ | ✅ | ✕ | ✕ | paste | import the server once in Settings -> MCP; enable the skill for the agent |
 | Senpi | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | none |
-| gajae-code | ✅ | ✅ | ✅ | ✅ | ✅ | paste | none |
-| Kimchi Coding | ✅ | ⚠ | ⚠ | ⚠ | ✅ | paste | none |
-| Command Code | ✅ | ✅ | ✅ | ✅ | ✅ | paste | none |
-| ZCode | ✅ | ✅ | ? | ? | ✅ | paste | sqlite3 for the CLI database |
-| Kiro | ✅ | ⚠ | ✕ | ? | ✅ | paste | sqlite3 for the CLI database |
-| Kilo Code | ✅ | ✅ | ✅ | ✅ | ✅ | paste | sqlite3 for the CLI store |
+| gajae-code | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | none |
+| Kimchi Coding | ✅ | ⚠ | ⚠ | ⚠ | ✅ | ✅ | none |
+| Command Code | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | none |
+| ZCode | ✅ | ✅ | ? | ? | ✅ | ✅ | sqlite3 for the CLI database |
+| Kiro | ✅ | ⚠ | ✕ | ? | ✅ | ✅ | sqlite3 for the CLI database |
+| Kilo Code | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | sqlite3 for the CLI store |
 | Roo Code | ✅ | ⚠ | ✅ | ✅ | ✅ | paste | roo CLI (editor tasks reopen in the editor) |
 | Zed | ✅ | ✕ | ✅ | ✅ | ✕ | paste | sqlite3 + zstd |
-| Devin CLI | ✅ | ✅ | ✅ | ✕ | ✅ | ✅ | sqlite3 |
-| CodeWhale | — | — | ? | ? | ✅ | paste | none |
-| CodeBuddy Code | ✅ | ✅ | ✅ | ✅ | ✅ | paste | none |
-| Reasonix | ✅ | ✅ | ✅ | ✅ | ✅ | paste | zstd for 1.x sessions |
-| TRAE CLI | ✅ | ✅ | ✅ | ? | ✅ | paste | none |
-| Muse Code | ✅ | ✅ | ✅ | ? | ✅ | paste | none |
+| CodeWhale | — | — | ? | ? | ✅ | ✅ | none |
+| CodeBuddy Code | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | none |
+| Reasonix | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | zstd for 1.x sessions |
+| TRAE CLI | ✅ | ✅ | ✅ | ? | ✅ | ✅ | none |
+| Muse Code | ✅ | ✅ | ✅ | ? | ✅ | ✅ | none |
 
 ✅ works &middot; — possible, not built yet &middot; ✕ the harness has no such mechanism &middot; ⚠ waiting on the harness itself &middot; ? not investigated
 
