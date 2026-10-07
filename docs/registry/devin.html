@@ -39,7 +39,7 @@
 <h1>Devin CLI</h1>
 <ul>
 <li><strong>ID</strong>: <code>devin</code></li>
-<li><strong>Store</strong>: <code>&lt;data&gt;/devin/cli/sessions.db</code> — <code>~/.local/share/devin/cli/sessions.db</code> on Linux, <code>~/Library/Application Support/devin/cli/sessions.db</code> on macOS, <code>%LOCALAPPDATA%\devin\cli\sessions.db</code> on Windows — with <code>cli_sessions.db</code> beside it holding the pre-rename copy</li>
+<li><strong>Store</strong>: <code>&lt;data&gt;/devin/cli/sessions.db</code> — <code>~/.local/share/devin/cli/sessions.db</code> on Linux (verified); <code>~/Library/Application Support/devin/cli/sessions.db</code> on macOS and <code>%LOCALAPPDATA%\devin\cli\sessions.db</code> on Windows are the platform conventions the binary&#39;s own strings name — unverified on those platforms — with <code>cli_sessions.db</code> beside it holding the pre-rename copy</li>
 <li><strong>Summaries</strong>: <code>&lt;data&gt;/devin/summaries/&lt;session_id&gt;.md</code></li>
 <li><strong>Read override</strong>: <code>DEJA_DEVIN_DB</code> replaces the store path</li>
 <li><strong>Format</strong>: SQLite, two tables per conversation — <code>sessions</code> for the row, <code>message_nodes</code> for the turns — plus <code>prompt_history</code> for the inline shell commands run between turns</li>
@@ -71,16 +71,18 @@
 <p>shaped hooks into the <code>&#34;hooks&#34;</code> key of <code>~/.config/devin/config.json</code>:</p>
 <p>SessionStart and PostCompaction run <code>hook-context</code>, UserPromptSubmit runs</p>
 <p><code>hook-prompt</code>, PostToolUse runs <code>hook-tool</code> (matcher `exec|edit|write|</p>
-<p>apply_patch|notebook_edit|run_subagent<code>) and </code>hook-tool-after` (matcher</p>
+<p>apply_patch|notebook_edit<code>) and </code>hook-tool-after` (matcher</p>
 <p><code>^exec$</code>), and SessionEnd runs <code>hook-session-end</code>. Devin&#39;s hook replies must</p>
 <p>name the event that fired, which is why the hooks emit <code>hook_event_name</code> from</p>
 <p>the payload rather than their compiled-in names; on Claude&#39;s events nothing</p>
 <p>changes.</p>
 <p><code>devin-plugin/</code> in this repo ships the same wiring as a Devin plugin —</p>
 <p><code>.devin-plugin/plugin.json</code> with the MCP server, <code>hooks.json</code>, and the skill —</p>
-<p>installed with <code>devin plugins install vshulcz/deja-vu#devin-plugin</code>. In Devin&#39;s</p>
-<p>cloud sessions plugin hooks cannot fire SessionStart or SessionEnd, so the</p>
-<p>opening digest and the end-of-session marker are CLI-only there; <code>deja install</code></p>
+<p>installed with <code>devin plugins install vshulcz/deja-vu#devin-plugin</code>. Devin&#39;s</p>
+<p>cloud sessions are reported to fire plugin hooks on a smaller event set —</p>
+<p>SessionStart and SessionEnd among the ones not delivered, though the plugin</p>
+<p>docs are a closed beta and the list is not public — so on those the opening</p>
+<p>digest and the end-of-session marker may be CLI-only; <code>deja install</code></p>
 <p><code>devin-auto</code> stays the recommended path. Where both are present the plugin&#39;s</p>
 <p>hooks see the wiring in <code>~/.config/devin/config.json</code> and stand down.</p>
 <p><strong>Last verified:</strong> 2026-10-07 (Devin CLI 3000.11.3)</p>
@@ -103,10 +105,12 @@
 <p>earlier messages under the same <code>message_id</code>; dedupe by <code>message_id</code>, not</p>
 <p>position, or a compacted session reads its user turns twice.</p>
 <ul>
-<li><strong><code>subagent_heads</code> exists but is empty</strong> on the observed builds — side</li>
+<li><strong><code>subagent_heads</code> exists but is empty</strong> on the observed builds. When a</li>
 </ul>
-<p>chains are found structurally, as the NULL-parent roots the main chain never</p>
-<p>reaches.</p>
+<p>build populates it, its declared <code>agent_id</code> names the sub-session; when it</p>
+<p>stays empty, side chains are found structurally — the NULL-parent roots</p>
+<p>the main chain never reaches, which is also how chains a rewind orphaned</p>
+<p>still surface.</p>
 <ul>
 <li><strong><code>PostToolUse</code> is also the failure event.</strong> Devin has no PostToolUseFailure:</li>
 </ul>

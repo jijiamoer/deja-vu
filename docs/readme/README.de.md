@@ -15,7 +15,7 @@ der gerade arbeitet, den Teil, der zählt.</p>
 
 <p align="center"><sub><em>Niemand hat gesucht — der Agent hat deja von sich aus aufgerufen. Zwei echte Läufe, echtes Modell, echte Tool-Aufrufe, auf einem synthetischen Korpus: es wird niemandes Historie veröffentlicht.</em></sub></p>
 
-<p align="center"><b>deja ist von der ersten Minute an voll: die Historie, die 38 Agents längst geschrieben haben, in Sekunden indiziert, ohne Modell und ohne eigenen Erfassungsschritt.</b></p>
+<p align="center"><b>deja ist von der ersten Minute an voll: die Historie, die 39 Agents längst geschrieben haben, in Sekunden indiziert, ohne Modell und ohne eigenen Erfassungsschritt.</b></p>
 
 <p align="center"><b>Das genaueste, im Betrieb günstigste und schnellste Gedächtnis für Coding-Agents, das wir messen konnten.</b></p>
 
