@@ -1,0 +1,29 @@
+{
+  "name": "deja-vu",
+  "version": "0.21.7",
+  "description": "deja-vu memory for Devin: your own past sessions, from every coding agent on the machine, recalled before you ask.",
+  "author": {
+    "name": "vshulcz",
+    "url": "https://github.com/vshulcz"
+  },
+  "homepage": "https://vshulcz.github.io/deja-vu/",
+  "repository": "https://github.com/vshulcz/deja-vu",
+  "license": "MIT",
+  "keywords": [
+    "memory",
+    "session-history",
+    "recall",
+    "context",
+    "mcp",
+    "devin"
+  ],
+  "skills": "./skills/",
+  "mcpServers": {
+    "deja": {
+      "command": "deja",
+      "args": [
+        "mcp"
+      ]
+    }
+  }
+}
