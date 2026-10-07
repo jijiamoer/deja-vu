@@ -145,11 +145,17 @@ func parseDevinDBWhere(db, where string) ([]model.Session, error) {
 	}
 	// `hidden` landed after the first builds that wrote this store; a column
 	// the query names but the schema lacks fails the whole read. Probe once
-	// and emit a literal for what is missing.
+	// and emit a literal for what is missing — but only on a clean negative:
+	// a probe that errors (a locked file, say) leaves `hidden` in the query
+	// so the main read reports the real failure instead of indexing hidden
+	// sessions behind a literal 0.
 	hidden := "hidden"
-	if !devinDBHasColumn(db, "sessions", "hidden") {
+	if devinDBColumnMissing(db, "sessions", "hidden") {
 		hidden = "0"
 	}
+	// subagent_heads is the newer schema's own record of which chains are
+	// subagent runs; probe the table once per store rather than per session.
+	hasSubHeads := devinDBTableExists(db, "subagent_heads")
 	q := `select json_object('id',id,'dir',working_directory,'title',title,` +
 		`'created',created_at,'updated',last_activity_at,'head',main_chain_id,'hidden',` + hidden + `)` +
 		` from sessions` + where + ` order by last_activity_at`
@@ -191,7 +197,7 @@ func parseDevinDBWhere(db, where string) ([]model.Session, error) {
 			_ = cmd.Wait()
 			return nil, err
 		}
-		sides := devinSessionChains(&s, nodes, r.Head, devinSubagentHeads(db, r.ID))
+		sides := devinSessionChains(&s, nodes, r.Head, devinSubagentHeads(db, r.ID, hasSubHeads))
 		devinPromptHistory(&s, db)
 		if len(s.Messages) == 0 && len(nodes) == 0 {
 			continue
@@ -312,10 +318,11 @@ type devinSubHead struct {
 }
 
 // devinSubagentHeads reads the session's declared subagent runs. Builds that
-// predate the table have none — the query failure reads as empty, and the
-// leaf heuristic below still finds their chains.
-func devinSubagentHeads(db, sid string) []devinSubHead {
-	if !devinDBTableExists(db, "subagent_heads") {
+// predate the table have none — the caller probes that once per store, and
+// a query failure here reads as empty: the leaf heuristic below still finds
+// their chains.
+func devinSubagentHeads(db, sid string, table bool) []devinSubHead {
+	if !table {
 		return nil
 	}
 	out, err := sqliteOutput(db, `select json_object('agent',agent_id,'node',chain_node_id)`+
@@ -336,12 +343,13 @@ func devinDBTableExists(db, table string) bool {
 	return err == nil && strings.TrimSpace(string(out)) != "0"
 }
 
-// devinDBHasColumn reports whether a table carries the column — older
-// sessions.db schemas predate `hidden`, and naming a missing column in the
-// sessions query fails the whole store read.
-func devinDBHasColumn(db, table, column string) bool {
+// devinDBColumnMissing reports a confirmed absence — older sessions.db
+// schemas predate `hidden`, and naming a missing column in the sessions
+// query fails the whole store read. A probe that itself fails answers
+// false, leaving the column in the query so the real error surfaces there.
+func devinDBColumnMissing(db, table, column string) bool {
 	out, err := sqliteOutput(db, `select count(*) from pragma_table_info('`+table+`') where name='`+column+`'`)
-	return err == nil && strings.TrimSpace(string(out)) != "0"
+	return err == nil && strings.TrimSpace(string(out)) == "0"
 }
 
 // devinSessionChains fills s.Messages from the session's chains: the main
