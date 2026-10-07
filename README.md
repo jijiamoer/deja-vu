@@ -252,7 +252,7 @@ whether or not the tool is called.
 ## Supported harnesses
 
 <!-- matrix:start -->
-aider &middot; Amp &middot; Antigravity &middot; Claude Code &middot; Cline &middot; Codex CLI &middot; Copilot CLI &middot; VS Code Copilot Chat &middot; Cursor &middot; DeepSeek Harness &middot; Gemini CLI &middot; Goose &middot; Grok Build &middot; Hermes &middot; Kimi Code &middot; omp (Oh My Pi) &middot; OpenClaw &middot; opencode &middot; Continue &middot; Crush &middot; pi &middot; prime-agent (PrimeIntellect) &middot; Qwen Code &middot; Cherry Studio &middot; Senpi &middot; gajae-code &middot; Kimchi Coding &middot; Command Code &middot; ZCode &middot; Kiro &middot; Kilo Code &middot; Roo Code &middot; Zed &middot; CodeWhale &middot; CodeBuddy Code &middot; Reasonix &middot; TRAE CLI &middot; Muse Code.
+aider &middot; Amp &middot; Antigravity &middot; Claude Code &middot; Cline &middot; Codex CLI &middot; Copilot CLI &middot; VS Code Copilot Chat &middot; Cursor &middot; DeepSeek Harness &middot; Gemini CLI &middot; Goose &middot; Grok Build &middot; Hermes &middot; Kimi Code &middot; omp (Oh My Pi) &middot; OpenClaw &middot; opencode &middot; Continue &middot; Crush &middot; pi &middot; prime-agent (PrimeIntellect) &middot; Qwen Code &middot; Cherry Studio &middot; Senpi &middot; gajae-code &middot; Kimchi Coding &middot; Command Code &middot; ZCode &middot; Kiro &middot; Kilo Code &middot; Roo Code &middot; Zed &middot; Devin CLI &middot; CodeWhale &middot; CodeBuddy Code &middot; Reasonix &middot; TRAE CLI &middot; Muse Code.
 
 <details>
 <summary>What each one supports</summary>
@@ -292,6 +292,7 @@ aider &middot; Amp &middot; Antigravity &middot; Claude Code &middot; Cline &mid
 | Kilo Code | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | sqlite3 for the CLI store |
 | Roo Code | ✅ | ⚠ | ✅ | ✅ | ✅ | paste | roo CLI (editor tasks reopen in the editor) |
 | Zed | ✅ | ✕ | ✅ | ✅ | ✕ | paste | sqlite3 + zstd |
+| Devin CLI | ✅ | ✅ | ✅ | ✕ | ✅ | ✅ | sqlite3 |
 | CodeWhale | — | — | ? | ? | ✅ | ✅ | none |
 | CodeBuddy Code | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | none |
 | Reasonix | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | zstd for 1.x sessions |
