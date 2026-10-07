@@ -217,7 +217,6 @@ func isCommandTool(name string) bool {
 		// Devin's shell tool.
 		"exec":
 		return true
-		return true
 	}
 	return false
 }

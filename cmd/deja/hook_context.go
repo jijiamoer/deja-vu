@@ -511,7 +511,6 @@ func runHookContextMode(dir string, plain, once bool) error {
 			return err
 		}
 	}
-	}
 	if once {
 		input.Once = true
 	}
