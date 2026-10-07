@@ -1119,6 +1119,16 @@ func doctorHarnesses(w io.Writer, dir string) {
 	printFiles("deepseek", dshRoot, doctorExists(dshRoot), sources.DeepSeekSessionFiles())
 	zedDB := sources.ZedDB()
 	printRow("zed", zedDB, doctorFilePresent(zedDB), doctorSQLiteDetail(zedDB, sqlite))
+	// One store for every local session, as Zed has — but the file the row
+	// names may be either of the two Devin keeps side by side.
+	devinDB := sources.DevinSessionsDB()
+	devinLoc := devinDB
+	devinDetail := doctorSQLiteDetail(devinDB, sqlite)
+	if legacy := sources.DevinLegacySessionsDB(); !doctorFilePresent(devinDB) && doctorFilePresent(legacy) {
+		devinLoc = legacy
+		devinDetail = doctorSQLiteDetail(legacy, sqlite)
+	}
+	printRow("devin", devinLoc, doctorFilePresent(devinDB) || doctorFilePresent(sources.DevinLegacySessionsDB()), devinDetail)
 	// One store per project rather than one per machine, so the registry is
 	// what makes them findable at all. Name it even when it lists nothing:
 	// "the registry is empty" is the answer for someone whose crush sessions
@@ -1993,6 +2003,7 @@ func doctorMCPConfigs() []doctorMCPConfig {
 		{"continue", continueConfigPath(), doctorContinueWired, nil},
 		{"crush", crushConfigPath(), doctorJSONWired("mcp"), doctorJSONDejaKeys("mcp")},
 		{"zed", sources.ZedSettingsPath(), doctorZedWired, nil},
+		{"devin", devinMCPConfigPath(), doctorJSONWired("mcpServers"), doctorJSONDejaKeys("mcpServers")},
 		// The nine targets `deja install` has always had and this table never
 		// named. A row here is the only place a machine says whether the
 		// server is declared and which binary it runs, so for these the report

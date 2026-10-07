@@ -1472,6 +1472,39 @@
       }
     },
     {
+      "id": "devin",
+      "store_paths": [
+        "~/Library/Application Support/devin/cli/sessions.db",
+        "${XDG_DATA_HOME}/devin/cli/sessions.db",
+        "%LOCALAPPDATA%/devin/cli/sessions.db",
+        "cli_sessions.db beside sessions.db (the legacy name)",
+        "${DEJA_DEVIN_DB}"
+      ],
+      "format_kind": "sqlite",
+      "fixture_paths": [
+        "fixtures/registry/devin/devin.sql"
+      ],
+      "parser_source": "internal/sources/devin.go",
+      "last_verified": "2026-10-07",
+      "display_name": "Devin CLI",
+      "capabilities": {
+        "mcp": true,
+        "auto": true,
+        "skill": true,
+        "command": false,
+        "resume": true,
+        "handoff": "exec",
+        "prereq": "sqlite3"
+      },
+      "gaps": {
+        "command": {
+          "state": "impossible",
+          "why": "Devin CLI has no user-registered slash-command file: its plugin manifest and skills directories are the only extension surfaces the docs describe, so `deja lookup` has no file to live in.",
+          "source": "bundled docs at share/devin/docs/extensibility (3000.11.3)"
+        }
+      }
+    },
+    {
       "id": "codewhale",
       "store_paths": [
         "${CODEWHALE_HOME:-~/.codewhale}/sessions/<id>.json",

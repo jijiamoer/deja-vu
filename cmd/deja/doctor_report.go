@@ -572,6 +572,9 @@ func doctorStoreChecks() []doctorStoreCheck {
 		// Zed keeps one SQLite store rather than session files, so the file
 		// list is the database itself — the shape opencode's row uses.
 		{"zed", []string{sources.ZedDB()}, presentDoctorFile(sources.ZedDB()), doctorProbeZed},
+		// Devin keeps one SQLite store too, beside which a second file can be
+		// the store: the legacy name the pre-rename builds wrote.
+		{"devin", []string{sources.DevinSessionsDB(), sources.DevinLegacySessionsDB()}, sources.DevinFiles(), doctorProbeDevin},
 		{"deja", []string{sources.NotesFile()}, presentDoctorFile(sources.NotesFile()), sources.ParseNotesFile},
 	}
 	// A store DEJA_STORES silences has no row: it is not missing, not empty and
@@ -624,6 +627,13 @@ func doctorProbeZCode(path string) ([]model.Session, error) {
 // says what a real read would find rather than that the file exists.
 func doctorProbeZed(path string) ([]model.Session, error) {
 	return sources.ParseZedDB(path)
+}
+
+// doctorProbeDevin reads one of Devin's two store names with the same parser
+// both feed: the legacy cli_sessions.db is the same schema, not a second
+// format.
+func doctorProbeDevin(path string) ([]model.Session, error) {
+	return sources.ParseDevinDB(path)
 }
 
 // anotherFileOpens reports whether any file besides one already known to be

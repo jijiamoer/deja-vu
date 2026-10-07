@@ -84,6 +84,10 @@ func autoWirings() []autoWiring {
 		// whole of auto-recall here — there is no digest hook to look for.
 		{"crush", func() string { return crushConfigPath() }, "hook-tool", ""},
 		{"grok", func() string { return grokHooksPath() }, "hook-context", ""},
+		// Devin keeps its hooks in the "hooks" key of the same config.json
+		// that holds its other user settings; the file exists whether deja
+		// wrote to it or not.
+		{"devin", func() string { return devinConfigPath() }, "hook-context", ""},
 		// kiro-cli runs hooks from the agent a chat starts in; deja's is its
 		// own agent file (#4304).
 		{"kiro", func() string { return kiroAgentPath() }, "hook-context", ""},
@@ -121,6 +125,7 @@ func autoWirings() []autoWiring {
 // them or not, so the file being there says nothing about deja (#4275).
 var autoInClientConfig = map[string]bool{
 	"cursor": true, "qwen": true, "codebuddy": true, "workbuddy": true, "trae": true, "trae-ide": true, "muse": true, "kimi": true, "crush": true, "zcode": true, "commandcode": true,
+	"copilot": true, "devin": true,
 }
 
 // autoUnwired reports whether a row's file holds no deja wiring at all: it is

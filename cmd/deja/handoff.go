@@ -334,6 +334,9 @@ func handoffCommand(target, prompt string) ([]string, bool) {
 	case "antigravity":
 		// Antigravity's CLI is `agy`; -i seeds a prompt into an interactive session.
 		return []string{"agy", "-i", prompt}, true
+	case "devin":
+		// Devin CLI's one-shot mode: -p prints an answer and exits.
+		return []string{"devin", "-p", prompt}, true
 	default:
 		return nil, false
 	}
@@ -349,5 +352,5 @@ var handoffAlias = map[string]string{"agy": "antigravity"}
 var handoffPasteOnly = map[string]bool{"openclaw": true, "hermes": true, "roo": true, "kilocode": true, "cherrystudio": true, "kiro": true, "kimchi": true, "commandcode": true, "zcode": true, "gjc": true, "zed": true, "deepseek": true, "codewhale": true, "codebuddy": true, "trae": true, "muse": true, "reasonix": true, "copilot-chat": true, "continue": true}
 
 func handoffTargets() []string {
-	return []string{"claude", "codex", "opencode", "cursor", "copilot", "gemini", "qwen", "antigravity", "aider", "pi", "senpi", "omp", "amp", "prime", "grok", "cline", "goose", "kimi", "crush"}
+	return []string{"claude", "codex", "opencode", "cursor", "copilot", "gemini", "qwen", "antigravity", "aider", "pi", "senpi", "omp", "amp", "prime", "grok", "cline", "goose", "kimi", "crush", "devin"}
 }

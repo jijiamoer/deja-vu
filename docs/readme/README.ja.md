@@ -15,7 +15,7 @@ deja はそれを数か月前の分まで丸ごとインデックス化し、
 
 <p align="center"><sub><em>誰も検索していません——エージェントが自分で deja を呼び出しました。実際のモデルと実際のツール呼び出しによる2回の本物の実行で、対象は合成コーパスです。誰の履歴も公開していません。</em></sub></p>
 
-<p align="center"><b>deja は最初から満杯の状態で始まります。38 のエージェントがすでに書き残した履歴を、インデックス作成中から検索でき、モデルもキャプチャ手順も不要です。</b></p>
+<p align="center"><b>deja は最初から満杯の状態で始まります。39 のエージェントがすでに書き残した履歴を、インデックス作成中から検索でき、モデルもキャプチャ手順も不要です。</b></p>
 
 <p align="center">しかも、誰かが頼む必要もありません。リコールはセッション開始時、プロンプトごと、
 ファイルが編集される前やコマンドが実行される前、そしてコマンドが失敗した後に届きます。キーやトークンはインデックス作成時に取り除かれます。
@@ -114,13 +114,13 @@ aider の読み取り専用コンテキストファイル、Windows の `cmd /c 
 <details>
 <summary>各エージェント自身のガイダンスファイルに書き込まれる内容</summary>
 
-インストール時には、検出したハーネス向けにユーザーレベルのガイダンスも書き込みます。Claude Code、Codex、opencode、Gemini CLI、Antigravity、Qwen、Kimi Code、pi、Senpi、Copilot、VS Code Copilot Chat、Cursor、Goose、OpenClaw、Hermes、Roo Code、omp、Amp、prime-agent、DeepSeek Harness、Continue、Crush、Zed は、それぞれ自身のガイダンスファイル（または設定された `XDG_CONFIG_HOME` 配下）に書き込まれます。再実行すると、周囲のユーザー記述はそのままに、deja のスキルまたはマーク付きブロックだけを書き換えます。オプトアウトするには `deja install --all --no-guidance` を使ってください。Grok Build には、それが読み込む `~/.agents/skills` に共有スキルが置かれます。その横に書かれる `~/.grok/GROK.md` は、同じディレクトリを使う無関係なコミュニティ製 CLI 向けです。Cursor にはユーザーレベルの指示ファイルがないため、Cursor がスキルを読み込む 4 か所のひとつである `~/.agents/skills` に共有スキルが置かれます——毎セッションではなく、関連がありそうなときにだけ読み込まれます。Kilo Code、gajae-code、Command Code、Cherry Studio、Reasonix にはスキルが、Kiro にはステアリングファイルが、それぞれ専用のインストールターゲットから書き込まれます。
+インストール時には、検出したハーネス向けにユーザーレベルのガイダンスも書き込みます。Claude Code、Codex、opencode、Gemini CLI、Antigravity、Qwen、Kimi Code、pi、Senpi、Copilot、VS Code Copilot Chat、Cursor、Goose、OpenClaw、Hermes、Roo Code、omp、Amp、prime-agent、DeepSeek Harness、Continue、Crush、Zed、Devin CLI は、それぞれ自身のガイダンスファイル（または設定された `XDG_CONFIG_HOME` 配下）に書き込まれます。再実行すると、周囲のユーザー記述はそのままに、deja のスキルまたはマーク付きブロックだけを書き換えます。オプトアウトするには `deja install --all --no-guidance` を使ってください。Grok Build には、それが読み込む `~/.agents/skills` に共有スキルが置かれます。その横に書かれる `~/.grok/GROK.md` は、同じディレクトリを使う無関係なコミュニティ製 CLI 向けです。Cursor にはユーザーレベルの指示ファイルがないため、Cursor がスキルを読み込む 4 か所のひとつである `~/.agents/skills` に共有スキルが置かれます——毎セッションではなく、関連がありそうなときにだけ読み込まれます。Kilo Code、gajae-code、Command Code、Cherry Studio、Reasonix にはスキルが、Kiro にはステアリングファイルが、それぞれ専用のインストールターゲットから書き込まれます。
 
 </details>
 
 ## できること
 
-**Codex で解決して、Claude が覚えている。** 38 のコーディングエージェントはすべての会話を
+**Codex で解決して、Claude が覚えている。** 39 のコーディングエージェントはすべての会話を
 ローカルファイルに書き出しています。deja はそれらのファイルを、全エージェントが読めるひとつの記憶レイヤーに変えます。
 
 | | |
@@ -321,6 +321,7 @@ aider &middot; Amp &middot; Antigravity &middot; Claude Code &middot; Cline &mid
 | Kilo Code | ✅ | ⚠ | ✅ | ✅ | ✅ | 貼り付け | CLI ストア用の sqlite3 |
 | Roo Code | ✅ | ⚠ | ✅ | ✅ | ✅ | 貼り付け | roo CLI（エディターのタスクはエディターで再開） |
 | Zed | ✅ | ✕ | ✅ | ✅ | ✕ | 貼り付け | sqlite3 + zstd |
+| Devin CLI | ✅ | ✅ | ✅ | ✕ | ✅ | 実行 | sqlite3 |
 | CodeWhale | — | — | ? | ? | ✅ | 貼り付け | なし |
 | CodeBuddy Code | ✅ | ✅ | — | — | — | 貼り付け | なし |
 | Reasonix | ✅ | ✅ | ✅ | ✅ | ✅ | 貼り付け | 1.x セッション用の zstd |
