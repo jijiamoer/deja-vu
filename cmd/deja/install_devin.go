@@ -27,8 +27,13 @@ import (
 // devinConfigDir is Devin CLI's user config directory, the platform's own:
 // ~/.config/devin on Linux and macOS (XDG_CONFIG_HOME honoured),
 // %APPDATA%\devin on Windows.
-func devinConfigDir() string {
-	if runtime.GOOS == "windows" {
+func devinConfigDir() string { return devinConfigDirFor(runtime.GOOS) }
+
+// devinConfigDirFor is devinConfigDir with the platform spelled out, so the
+// Windows branch is covered from a Linux test the same way
+// hookCommandQuoteFor's is.
+func devinConfigDirFor(goos string) string {
+	if goos == "windows" {
 		app := os.Getenv("APPDATA")
 		if app == "" {
 			app = filepath.Join(homeDir(), "AppData", "Roaming")
@@ -70,9 +75,10 @@ var devinHookWiring = []struct{ Event, Sub, Matcher string }{
 	// (verified on 3000.11.3) — so the line rides on PostToolUse instead:
 	// late for the action that fired it, in time for everything the agent
 	// does next on that file. exec runs commands; the file tools are edit,
-	// write, apply_patch and notebook_edit; run_subagent is the spawn deja
-	// briefs on every other host.
-	{"PostToolUse", "hook-tool", "^(exec|edit|write|apply_patch|notebook_edit|run_subagent)$"},
+	// write, apply_patch and notebook_edit. run_subagent is absent on
+	// purpose: other hosts get the spawn brief before the child starts, and
+	// a PostToolUse line lands only after it is already running.
+	{"PostToolUse", "hook-tool", "^(exec|edit|write|apply_patch|notebook_edit)$"},
 	// The fix-pair line, on the shell: a failed exec carries the error its
 	// output names, and the store knows what followed that error before.
 	// Devin has no PostToolUseFailure — a nonzero exit is an ordinary
