@@ -1,0 +1,25 @@
+# https://docs.devin.ai/onboard-devin/environment-yaml
+# Devin VM blueprint for deja-vu development.
+# One-time setup (e.g., install system tools, global CLIs).
+initialize:
+  - name: install Go 1.25.5 toolchain (project requires Go 1.25; not on default image PATH)
+    run: |
+      mkdir -p "$HOME/go-toolchain"
+      curl -fsSL https://go.dev/dl/go1.25.5.linux-amd64.tar.gz | tar -C "$HOME/go-toolchain" -xzf -
+      echo "PATH=$HOME/go-toolchain/go/bin:$PATH" >> "$ENVRC"
+  - name: install sqlite3 CLI (needed to load checked-in .sql fixtures during `go test`)
+    run: sudo apt-get update -qq && sudo apt-get install -y sqlite3
+# Install project dependencies (runs during builds, surfaced to agent at session start).
+maintenance: |
+  "$HOME/go-toolchain/go/bin/go" mod download
+# Reference info for agent
+knowledge:
+  - name: toolchain
+    contents: |
+      Go lives at ~/go-toolchain/go/bin (go 1.25.5); prepend it to PATH if `go` is missing.
+  - name: test
+    contents: |
+      go test ./... -race -count=1   # full suite; fixtures need the sqlite3 CLI on PATH
+  - name: lint
+    contents: |
+      go vet ./... && gofmt -s -l .   # plus go build ./cmd/deja — all must be clean before PR
