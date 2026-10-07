@@ -120,6 +120,10 @@ func wiredSurfaces(t *testing.T, harness string) map[string]bool {
 	case "claude":
 		// A target of its own, deliberately outside --auto.
 		got["statusline"] = slices.Contains(installTargetNames(), "statusline")
+	case "devin":
+		// PostCompaction is Devin's reset event and the context hook answers
+		// it — no hook-precompact enters the wiring.
+		got["compaction_reset"] = strings.Contains(all, "PostCompaction") && tokens["hook-context"]
 	case "gemini":
 		// PreCompress fires on every attempt and nothing fires after one, so
 		// the prompt hook catches a compaction up from the transcript.
