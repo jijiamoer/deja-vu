@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -48,8 +49,8 @@ import (
 // chain ends on; builds that never did leave only the chains the main one
 // cannot reach, which the leaf heuristic walks. `run_subagent` is not
 // resumable, so a subagent's id is `<session>:<agent_id>` when declared and
-// `<session>:<chain root's message id>` when it is not, and its Parent the
-// session id.
+// `<session>:<first message id of the part no earlier session carried>`
+// when it is not, and its Parent the session id.
 //
 // Read off Devin CLI 3000.11.3; `devin --resume <id>` takes the sessions
 // row's id. On Windows the store lives under %LOCALAPPDATA%\devin; Linux and
@@ -376,6 +377,13 @@ func devinSessionChains(s *model.Session, nodes []devinNode, head *int64, heads 
 	main := devinChain(byID, h)
 	mainNodes := map[int64]bool{}
 	emitted := map[string]bool{}
+	emittedNode := map[int64]bool{}
+	// A node is covered once a session carried it — by node_id, or by
+	// message_id when it has one: a rebuilt copy is another node_id under
+	// the same message_id, and an empty message_id marks nothing.
+	covered := func(n devinNode) bool {
+		return emittedNode[n.nodeID] || n.msgID != "" && emitted[n.msgID]
+	}
 	var exits commandExits
 	if IndexCommands() {
 		exits = commandExits{}
@@ -383,7 +391,10 @@ func devinSessionChains(s *model.Session, nodes []devinNode, head *int64, heads 
 	devinEmitChain(s, main, exits)
 	for _, n := range main {
 		mainNodes[n.nodeID] = true
-		emitted[n.msgID] = true
+		emittedNode[n.nodeID] = true
+		if n.msgID != "" {
+			emitted[n.msgID] = true
+		}
 	}
 
 	// A chain the main one does not reach is a conversation of its own: the
@@ -391,9 +402,11 @@ func devinSessionChains(s *model.Session, nodes []devinNode, head *int64, heads 
 	// such leaf's chain is walked once — the deepest leaf first, so the
 	// copy whose build ran longest is the one emitted and the rest have
 	// nothing left to say (every one of their message_ids is already out).
-	// Leaves, deepest first: a side chain's best copy ends on the leaf its
-	// last build wrote, which is the one with the highest node_id under
-	// that root.
+	// A branch off a chain already emitted — an edited ask, a forked run —
+	// contributes only the suffix past the node it left from. Leaves,
+	// deepest first: a side chain's best copy ends on the leaf its last
+	// build wrote, which is the one with the highest node_id under that
+	// root.
 	var leaves []devinNode
 	for _, n := range nodes {
 		if mainNodes[n.nodeID] || children[n.nodeID] {
@@ -427,7 +440,10 @@ func devinSessionChains(s *model.Session, nodes []devinNode, head *int64, heads 
 			return false
 		}
 		for _, n := range chain {
-			emitted[n.msgID] = true
+			emittedNode[n.nodeID] = true
+			if n.msgID != "" {
+				emitted[n.msgID] = true
+			}
 		}
 		sides = append(sides, sub)
 		return true
@@ -437,20 +453,26 @@ func devinSessionChains(s *model.Session, nodes []devinNode, head *int64, heads 
 	}
 	for _, leaf := range leaves {
 		chain := devinChain(byID, leaf.nodeID)
-		fresh := false
-		for _, n := range chain {
-			if !emitted[n.msgID] {
-				fresh = true
-				break
-			}
+		// Cut the chain at the first node an earlier session carried: what
+		// remains is the branch's own part, and the sub-session is keyed on
+		// its first message — a node without a message_id falls back to its
+		// node_id.
+		i := len(chain)
+		for i > 0 && !covered(chain[i-1]) {
+			i--
 		}
-		if !fresh || len(chain) == 0 {
+		suffix := chain[i:]
+		if len(suffix) == 0 {
 			continue
 		}
 		// A rewind or an edit can leave a side chain whose messages got new
 		// ids — it looks like a run nobody declared. It still carries a
 		// conversation the harness wrote, and dropping it loses it quietly.
-		emitSub(chain, shortDevinID(chain[0].msgID))
+		id := shortDevinID(suffix[0].msgID)
+		if suffix[0].msgID == "" {
+			id = "n" + strconv.FormatInt(suffix[0].nodeID, 10)
+		}
+		emitSub(suffix, id)
 	}
 	return sides
 }

@@ -2,6 +2,7 @@ package sources
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -562,5 +563,169 @@ insert into message_nodes (session_id, node_id, parent_node_id, chat_message, cr
 	side := findDevinSession(sessions, "s1:w1")
 	if side == nil || !strings.Contains(side.Messages[0].Text, "a side chain nobody declared") {
 		t.Fatalf("the undeclared chain did not fall back to the leaf heuristic: %#v", sessions)
+	}
+}
+
+// devinStoreDDL is the store schema, copied from
+// fixtures/registry/devin/devin.sql, for tests that build their own rows.
+const devinStoreDDL = `
+create table sessions (
+    id text primary key,
+    working_directory text,
+    backend_type text,
+    model text,
+    agent_mode text,
+    created_at integer,
+    last_activity_at integer,
+    title text,
+    main_chain_id integer,
+    shell_last_seen_index integer,
+    cogs_json text,
+    workspace_dirs text,
+    hidden integer not null default 0,
+    metadata text
+);
+create table message_nodes (
+    row_id integer primary key autoincrement,
+    session_id text not null,
+    node_id integer not null,
+    parent_node_id integer,
+    chat_message text not null,
+    created_at integer,
+    metadata text
+);
+create table subagent_heads (
+    session_id text not null,
+    agent_id text not null,
+    chain_node_id integer not null,
+    updated_at integer not null,
+    primary key (session_id, agent_id)
+);
+create table prompt_history (
+    id integer primary key autoincrement,
+    content text,
+    timestamp integer,
+    session_id text,
+    is_shell integer not null default 0
+);
+`
+
+// A branch off the trunk — an edited ask forking at a node the main chain
+// already carries — is one subagent session holding only its own turns, not
+// a second copy of the shared prefix keyed on the trunk's root.
+func TestParseDevinDBBranchOffTrunkKeepsOnlySuffix(t *testing.T) {
+	devinHome(t)
+	db, _ := devinTestDB(t, devinStoreDDL+`
+insert into sessions values (
+    'b1', '/w/api', 'cli', 'swe-2', 'normal', 1785600000, 1785600100,
+    'branched session', 5, 0, null, '["/w/api"]', 0, null
+);
+insert into message_nodes (session_id, node_id, parent_node_id, chat_message, created_at, metadata) values
+    ('b1', 1, null, '{"message_id":"u1","role":"user","content":"trunk ask"}', 1785600001, '{}'),
+    ('b1', 2, 1,    '{"message_id":"a2","role":"assistant","content":[{"type":"text","text":"trunk answer"}]}', 1785600002, '{}'),
+    ('b1', 3, 2,    '{"message_id":"u3","role":"user","content":"branch ask"}', 1785600003, '{}'),
+    ('b1', 4, 3,    '{"message_id":"a4","role":"assistant","content":[{"type":"text","text":"branch answer"}]}', 1785600004, '{}'),
+    ('b1', 5, 2,    '{"message_id":"u5","role":"user","content":"edited ask a"}', 1785600005, '{}'),
+    ('b1', 6, 2,    '{"message_id":"u6","role":"user","content":"edited ask b"}', 1785600006, '{}');
+`)
+	sessions, err := ParseDevinDB(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(sessions) != 3 {
+		t.Fatalf("sessions = %#v", sessions)
+	}
+	main := findDevinSession(sessions, "b1")
+	if main == nil {
+		t.Fatalf("main session missing: %#v", sessions)
+	}
+	mainText := sessionText(main)
+	for _, want := range []string{"trunk ask", "trunk answer", "edited ask a"} {
+		if !strings.Contains(mainText, want) {
+			t.Fatalf("main chain missing %q: %s", want, mainText)
+		}
+	}
+	if strings.Contains(mainText, "branch ask") {
+		t.Fatalf("branch turns leaked into the main chain: %s", mainText)
+	}
+	branch := findDevinSession(sessions, "b1:"+shortDevinID("u3"))
+	edited := findDevinSession(sessions, "b1:"+shortDevinID("u6"))
+	if branch == nil || edited == nil || branch.ID == edited.ID {
+		t.Fatalf("subagent sessions = %#v", sessions)
+	}
+	for _, sub := range []*model.Session{branch, edited} {
+		if sub.Kind != "subagent" || sub.Parent != "b1" {
+			t.Fatalf("subagent = %#v", sub)
+		}
+		text := sessionText(sub)
+		if strings.Contains(text, "trunk ask") || strings.Contains(text, "trunk answer") {
+			t.Fatalf("%s repeats the shared prefix: %s", sub.ID, text)
+		}
+	}
+	branchText, editedText := sessionText(branch), sessionText(edited)
+	if !strings.Contains(branchText, "branch ask") || !strings.Contains(branchText, "branch answer") {
+		t.Fatalf("branch subagent lost its own turns: %s", branchText)
+	}
+	if !strings.Contains(editedText, "edited ask b") {
+		t.Fatalf("edited subagent lost its own turn: %s", editedText)
+	}
+}
+
+// Many branches off one trunk each become their own subagent session under
+// their own id — keying on the chain root collapses every one of them onto
+// the trunk's first message.
+func TestParseDevinDBManyBranchesGetDistinctIDs(t *testing.T) {
+	devinHome(t)
+	var b strings.Builder
+	b.WriteString(devinStoreDDL)
+	b.WriteString(`insert into sessions values (
+    'big', '/w', 'cli', 'swe-2', 'normal', 1785600000, 1785700000,
+    'many branches', 2000, 0, null, '["/w"]', 0, null
+);`)
+	var rows []string
+	for i := 1; i <= 2000; i++ {
+		role, parent := "user", "null"
+		if i%2 == 0 {
+			role = "assistant"
+		}
+		if i > 1 {
+			parent = fmt.Sprint(i - 1)
+		}
+		rows = append(rows, fmt.Sprintf(
+			`('big',%d,%s,'{"message_id":"m%d","role":"%s","content":"trunk %d"}',%d,'{}')`,
+			i, parent, i, role, i, 1785600000+i))
+	}
+	for i := 1; i <= 1000; i++ {
+		node := 2000 + i
+		rows = append(rows, fmt.Sprintf(
+			`('big',%d,%d,'{"message_id":"b%d","role":"user","content":"branch ask %d"}',%d,'{}')`,
+			node, i, node, i, 1785700000+i))
+	}
+	b.WriteString("\ninsert into message_nodes (session_id, node_id, parent_node_id, chat_message, created_at, metadata) values\n")
+	b.WriteString(strings.Join(rows, ",\n"))
+	b.WriteString(";\n")
+	db, _ := devinTestDB(t, b.String())
+	sessions, err := ParseDevinDB(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ids := map[string]bool{}
+	subs := 0
+	for i := range sessions {
+		s := &sessions[i]
+		if s.Kind != "subagent" {
+			continue
+		}
+		subs++
+		if ids[s.ID] {
+			t.Fatalf("subagent id %q is not unique", s.ID)
+		}
+		ids[s.ID] = true
+		if len(s.Messages) != 1 {
+			t.Fatalf("%s carries %d messages — the shared trunk prefix repeated: %#v", s.ID, len(s.Messages), s.Messages)
+		}
+	}
+	if subs != 1000 {
+		t.Fatalf("subagent sessions = %d, want 1000", subs)
 	}
 }
