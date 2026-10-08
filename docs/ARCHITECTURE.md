@@ -5,7 +5,7 @@ This document is for people changing `deja` internals.
 ## Source parsers
 
 Parsers live in `internal/sources` and return `[]model.Session`. The table is
-what the loader registers: the thirty-nine coding agents plus deja's own notes,
+what the loader registers: the forty-one coding agents plus deja's own notes,
 which is what `deja sources` prints. `docs/registry/` describes each store's
 layout in detail, and `internal/sources/registry_test.go` checks that index
 against the loader list.
@@ -35,12 +35,14 @@ against the loader list.
 | prime-agent (PrimeIntellect) | `prime.go` | JSONL transcripts under `~/.prime/agent/sessions` |
 | DeepSeek Harness | `deepseek.go` | zstd-compressed session JSONL under `~/.dsh/sessions` |
 | CodeWhale | `codewhale.go` | one JSON document per session under `${CODEWHALE_HOME:-~/.codewhale}/sessions`, and the pre-rebrand `~/.deepseek` root |
+| Junie | `junie.go`, `aui.go` | one `events.jsonl` per session under `${JUNIE_HOME:-~/.junie}/sessions`, blocks folded by step |
+| JetBrains AI Assistant | `jetbrains.go`, `aui.go` | the chats in each IDE's `workspace/*.xml`, agent chats in `aia-task-history/*.events` |
 | CodeBuddy Code | `codebuddy.go` | JSONL per session under `${CODEBUDDY_CONFIG_DIR:-~/.codebuddy}/projects/<cwd>/`, OpenAI Responses-style items; WorkBuddy's `~/.workbuddy` too |
 | Reasonix | `reasonix.go`, `reasonix_stores.go`, `reasonix_v4.go` | under `~/.reasonix` (`%APPDATA%\reasonix` on Windows): flat role/content JSONL in `sessions/` and `projects/<slug>/sessions/`, and the 1.x session directories (`sessions-v4/<id>/`, `desktop-sessions-v5/by-id/<id>/`) whose `events.frames` log is zstd-framed JSON |
 | TRAE CLI | `trae.go`, `codex.go` | Codex rollouts under `${TRAE_HOME:-~/.trae}/cli` (`sessions/`, `archived_sessions/`, `history.jsonl`); user turns from `user_message` and `item_completed` events only, tool calls from `history_mutation` |
 | Muse Code | `muse.go` | one event-sourced JSONL per session under `${XDG_DATA_HOME:-~/.local/share}/muse/sessions/YYYY/MM/DD/<id>/`, `retained_frame` children unwrapped; subagent logs under `subagent/` only with `DEJA_INCLUDE_SUBAGENTS=1` |
 | Zed | `zed.go` | threads in the SQLite store at `Zed/threads/threads.db` |
-| Devin CLI | `devin.go` | `cli/sessions.db` under the devin data dir — sessions and their parent-linked message nodes; subagent side chains surface as sessions of their own; prompt shell history in `prompt_history` |
+| Devin CLI | `devin.go` | one SQLite store at `${XDG_DATA_HOME:-~/.local/share}/devin/cli/sessions.db`, the live chain walked back over `parent_node_id` and deduped by `message_id`, subagent runs read as side chains |
 | Crush | `crush.go` | SQLite databases named by `projects.json`, plus `<project>/.crush/crush.db` |
 | Cherry Studio | `cherrystudio.go` | Claude-format JSONL under the app's `Data/Agents/.claude/projects`, plus pi and dsh logs under `Data/Agents/.pi` and `.dsh`; a data dir moved in the app's settings is read from `~/.cherrystudio/boot-config.json` |
 | Kilo Code | `kilo.go` | task JSON under the VS Code extension's storage, plus the CLI's `kilo.db` |
@@ -55,7 +57,7 @@ against the loader list.
 
 File-based sources are parsed with a worker pool sized to `runtime.NumCPU()`. Results are collected by input file index and then appended in sorted path order, so parsing can be parallel while index writes stay deterministic.
 
-Every SQLite store above is read through the local `sqlite3` command — opencode's and the schemas that borrow it, Cursor IDE state, Goose, Zed, Devin, Crush, Kiro, Hermes, and the databases Grok and OpenClaw keep beside their JSONL. Cursor CLI transcripts are plain JSONL; their tool results come from the chat's `store.db` beside them. There is no CGO SQLite dependency. Before trusting it, deja asks the `sqlite3` on PATH one JSON query per process: a wrapper that drops its arguments or a stub that prints nothing would otherwise read every store as empty, so a binary that does not answer is reported by path, as a missing one is.
+Every SQLite store above is read through the local `sqlite3` command — opencode's and the schemas that borrow it, Cursor IDE state, Goose, Zed, Crush, Kiro, Hermes, and the databases Grok and OpenClaw keep beside their JSONL. Cursor CLI transcripts are plain JSONL; their tool results come from the chat's `store.db` beside them. There is no CGO SQLite dependency. Before trusting it, deja asks the `sqlite3` on PATH one JSON query per process: a wrapper that drops its arguments or a stub that prints nothing would otherwise read every store as empty, so a binary that does not answer is reported by path, as a missing one is.
 
 Every one of those reads carries a wall-clock budget, ten minutes by default. One sqlite3 child once ran 13m54s with 0.75s of CPU in deja itself, and nothing in the tree set a deadline, so the run looked hung rather than slow. A store that runs out is an ordinary read error: the harness reports as unreadable, `deja doctor` names it, and the rest of the index still builds. `DEJA_STORE_TIMEOUT` takes a duration, and a zero or negative one turns the cap off for someone who would rather wait than lose a store.
 

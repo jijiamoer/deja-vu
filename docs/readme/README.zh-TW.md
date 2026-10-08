@@ -14,7 +14,7 @@
 
 <p align="center"><sub><em>沒有人去搜尋——是代理自己呼叫了 deja。兩次真實執行，真實模型、真實工具呼叫，跑在合成語料上：不會公開任何人的歷史。</em></sub></p>
 
-<p align="center"><b>deja 一開始就是滿的：39 個代理早已寫下的歷史，幾秒建好索引，不需要模型，也不需要額外的蒐集步驟。</b></p>
+<p align="center"><b>deja 一開始就是滿的：38 個代理早已寫下的歷史，幾秒建好索引，不需要模型，也不需要額外的蒐集步驟。</b></p>
 
 <p align="center"><b>我們能測到的編碼代理記憶裡，最準、最省、最快。</b></p>
 
@@ -98,7 +98,7 @@ skill 呼叫的是上面裝好的 `deja` 執行檔，自己不帶。
 
 ## 能得到什麼
 
-**在 Codex 裡解決，Claude 記得。** 三十九個編碼代理把每一次對話都寫進本機檔案，
+**在 Codex 裡解決，Claude 記得。** 四十個編碼代理把每一次對話都寫進本機檔案，
 deja 把這些檔案變成一層它們都能讀的記憶。
 
 | | |
@@ -185,7 +185,7 @@ Grok Build · Hermes · Goose · Qwen Code · Kimi Code · pi · omp (Oh My Pi) 
 Copilot CLI · VS Code Copilot Chat · Amp · prime-agent (PrimeIntellect) · Roo Code ·
 Continue · Crush · DeepSeek Harness · Cherry Studio · Senpi · gajae-code · Kimchi Coding ·
 Command Code · ZCode · CodeWhale · Reasonix · Kiro · Kilo Code · CodeBuddy Code ·
-TRAE CLI · Muse Code · Devin CLI · Zed。
+TRAE CLI · Muse Code · Junie · JetBrains AI Assistant · Devin CLI · Zed。
 
 每個工具分別支援 MCP 召回、自動召回、skill、指令、resume 和 handoff 中的哪些，見
 [英文 README 的能力矩陣](../../README.md#supported-harnesses)。自訂儲存位置透過 `DEJA_*_ROOT`

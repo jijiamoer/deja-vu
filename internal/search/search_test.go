@@ -465,8 +465,26 @@ func TestPrintPlainWhenNotTTY(t *testing.T) {
 	var b bytes.Buffer
 	Print(&b, hits, Options{Query: "needle"})
 	out := b.String()
-	if strings.Contains(out, "\x1b[") || !strings.Contains(out, "[opencode]") || !strings.Contains(out, "1 matches") {
+	if strings.Contains(out, "\x1b[") || !strings.Contains(out, "[opencode]") || !strings.Contains(out, "— 1 match\n") {
 		t.Fatalf("bad plain output: %q", out)
+	}
+}
+
+// One hit is "1 match", not "1 matches" (#4627); every other count, zero
+// included, keeps the plural.
+func TestMatchCount(t *testing.T) {
+	for _, tc := range []struct {
+		n    int
+		want string
+	}{
+		{0, "0 matches"},
+		{1, "1 match"},
+		{2, "2 matches"},
+		{11, "11 matches"},
+	} {
+		if got := MatchCount(tc.n); got != tc.want {
+			t.Errorf("MatchCount(%d) = %q, want %q", tc.n, got, tc.want)
+		}
 	}
 }
 

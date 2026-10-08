@@ -2,7 +2,7 @@
 
 [English](../README.md) | 中文
 
-OpenClaw 记得自己的会话。这个插件回答的是另一个问题：这台机器上 Claude Code、Codex、Cursor、Gemini、Zed 等其他三十八个编程智能体里做过什么，包括装 OpenClaw 之前的那几个月。
+OpenClaw 记得自己的会话。这个插件回答的是另一个问题：这台机器上 Claude Code、Codex、Cursor、Gemini、Zed 等其他四十个编程智能体里做过什么，包括装 OpenClaw 之前的那几个月。
 
 插件运行 [deja](https://github.com/vshulcz/deja-vu)，一个本地 Go 可执行文件，索引这些智能体本来就写在磁盘上的会话记录。不用大模型，不用向量嵌入，除非你主动要求，否则不走网络。
 
@@ -18,7 +18,7 @@ deja 可执行文件随包一起提供；你自己装的 deja（`brew install de
 
 ## 做什么
 
-- **会话开始时**（`agent_turn_prepare`）：这个项目定下的事，每个会话一次。
+- **会话开始时**（`agent:bootstrap`）：这个项目定下的事，每个会话一次，放在 Project Context 里。不需要 `allowConversationAccess`，`openclaw agent --local` 下也会运行。
 - **每回合之前**（`before_prompt_build`）：把提问拿去和索引比对，如果某次历史会话能回答它，那次会话就送到模型面前。多数情况下是沉默。
 - **压缩之前**（`before_compaction`）：deja 从会话文件里读出要被总结的回合，下一回合就带上智能体正在做的事。
 - **会话结束时**（`session_end`）：撤掉会话的在线标记，下一个会话的召回就能用上它。

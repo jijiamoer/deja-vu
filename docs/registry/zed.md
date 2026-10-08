@@ -99,6 +99,6 @@ the skill is the command, as it is for Codex, Qwen, Kimi and Copilot.
 Auto-recall stays out of reach for a different reason than a missing file: the
 editor runs nothing before a prompt is sent, so there is no point to inject at.
 
-Checked against Zed 1.16.1.
+Checked against Zed 1.22.0: the hooks PR (#52729) closed without a merge.
 
-**Last verified:** 2026-09-20
+**Last verified:** 2026-10-07

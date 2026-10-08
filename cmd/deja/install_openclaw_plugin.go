@@ -11,10 +11,10 @@ import (
 	"github.com/vshulcz/deja-vu/internal/sources"
 )
 
-// The bootstrap hook recalls once, against the session, and only in gateway
-// mode. OpenClaw's plugin runtime has the other half: before_prompt_build is
-// handed the prompt the user just typed and returns context that goes in front
-// of the model, and it fires under `openclaw agent --local` too.
+// The hook pack's digest runs only in gateway mode. OpenClaw's plugin runtime
+// has the rest: an agent:bootstrap hook of its own that also runs under
+// `openclaw agent --local`, and before_prompt_build, which is handed the prompt
+// the user just typed and returns context that goes in front of the model.
 //
 // Learned by running it against OpenClaw 2026.7.1-2:
 //   - A plugin needs both package.json with openclaw.extensions and
@@ -42,7 +42,7 @@ func installOpenClawPlugin(exe string, uninstall bool) (installResult, error) {
 		if err := os.RemoveAll(dir); err != nil {
 			return installResult{}, err
 		}
-		if _, err := setOpenClawPluginEnabled(false); err != nil {
+		if err := removeOpenClawPluginEntry(); err != nil {
 			return installResult{}, err
 		}
 		if _, err := setOpenClawPluginLoadPath(dir, false); err != nil {
@@ -80,12 +80,8 @@ func installOpenClawPlugin(exe string, uninstall bool) (installResult, error) {
 	if err != nil {
 		return installResult{}, err
 	}
-	// `openclaw plugins disable deja` writes enabled: false on the entry, and
-	// install wrote it back on while reporting "unchanged" (#4472).
-	var note string
-	if openclawEntrySwitchedOff("plugins.entries", openclawPluginID) {
-		note = "left deja's plugin switched off, the way it was — `openclaw plugins enable deja` turns it back on"
-	} else if _, err := setOpenClawPluginEnabled(true); err != nil {
+	cfg, err := setOpenClawPluginEntry()
+	if err != nil {
 		return installResult{}, err
 	}
 	if _, err := setOpenClawPluginLoadPath(dir, true); err != nil {
@@ -93,62 +89,90 @@ func installOpenClawPlugin(exe string, uninstall bool) (installResult, error) {
 	}
 	// The manifest and package.json beside it are deja's own and went unnamed
 	// on the screen whose job is saying what was touched, so the directory
-	// rides along (#3254).
-	return wroteAll(installResult{Path: entry, Action: a, Note: note},
-		installResult{Path: dir, Action: a}), nil
+	// rides along (#3254). The entry too: an upgrade that only added the grant
+	// said "unchanged".
+	return wroteAll(installResult{Path: entry, Action: a},
+		installResult{Path: dir, Action: a}, cfg), nil
 }
 
-// setOpenClawPluginEnabled adds or removes our entry under plugins.entries,
-// leaving every other plugin — and the user's allow list — untouched.
-func setOpenClawPluginEnabled(on bool) (string, error) {
-	path := filepath.Join(sources.OpenClawStateDir(), "openclaw.json")
+// setOpenClawPluginEntry writes our entry under plugins.entries, leaving
+// every other plugin — and the user's allow list — untouched.
+func setOpenClawPluginEntry() (installResult, error) {
+	path := openclawConfigPath()
 	old, err := readConfig(path)
 	if err != nil {
-		return "", err
+		return installResult{}, err
 	}
 	var root map[string]any
-	if len(bytes.TrimSpace(old)) == 0 {
-		if !on {
-			return "unchanged", nil
+	if len(bytes.TrimSpace(old)) > 0 {
+		if err := json.Unmarshal([]byte(jsoncToJSON(string(old))), &root); err != nil {
+			return installResult{}, openclawParseError(path, old)
 		}
+	}
+	if root == nil {
 		root = map[string]any{}
-	} else if configIsJSONC(old) {
-		// The same file the hook and the MCP entry are written into, and the
-		// same reason not to refuse it over a comment (#2811).
-		return setOpenClawEntryJSONC(path, old, "plugins.entries", openclawPluginID, "", on)
-	} else if json.Unmarshal(old, &root) != nil {
-		return "", openclawParseError(path, old)
 	}
 	plugins, _ := root["plugins"].(map[string]any)
 	entries, _ := mapAt(plugins, "entries")
-	if !on {
-		if entries == nil {
-			return "unchanged", nil
-		}
-		delete(entries, openclawPluginID)
-		if len(entries) == 0 {
-			delete(plugins, "entries")
-		}
-		if len(plugins) == 0 {
-			delete(root, "plugins")
-		}
-	} else {
-		if plugins == nil {
-			plugins = map[string]any{}
-			root["plugins"] = plugins
-		}
-		if entries == nil {
-			entries = map[string]any{}
-			plugins["entries"] = entries
-		}
-		entries[openclawPluginID] = map[string]any{"enabled": true}
+	have, _ := mapAt(entries, openclawPluginID)
+	entry, note := openclawPluginEntry(have, openclawTakesConversationAccess())
+	if configIsJSONC(old) {
+		// The same file the hook and the MCP entry are written into, and the
+		// same reason not to refuse it over a comment (#2811).
+		a, err := setOpenClawEntryJSONC(path, old, "plugins.entries", openclawPluginID, "", true, entry)
+		return installResult{Path: path, Action: a, Note: note}, err
+	}
+	if plugins == nil {
+		plugins = map[string]any{}
+		root["plugins"] = plugins
+	}
+	if entries == nil {
+		entries = map[string]any{}
+		plugins["entries"] = entries
+	}
+	entries[openclawPluginID] = entry
+	next, err := marshalConfigLike(old, root)
+	if err != nil {
+		return installResult{}, err
+	}
+	a, err := writeIfChanged(path, old, append(next, '\n'))
+	return installResult{Path: path, Action: a, Note: note}, err
+}
+
+// removeOpenClawPluginEntry takes our entry out of plugins.entries, and the
+// blocks it leaves empty.
+func removeOpenClawPluginEntry() error {
+	path := openclawConfigPath()
+	old, err := readConfig(path)
+	if err != nil || len(bytes.TrimSpace(old)) == 0 {
+		return err
+	}
+	if configIsJSONC(old) {
+		_, err := setOpenClawEntryJSONC(path, old, "plugins.entries", openclawPluginID, "", false, nil)
+		return err
+	}
+	var root map[string]any
+	if json.Unmarshal(old, &root) != nil {
+		return openclawParseError(path, old)
+	}
+	plugins, _ := root["plugins"].(map[string]any)
+	entries, _ := mapAt(plugins, "entries")
+	if entries == nil || entries[openclawPluginID] == nil {
+		return nil
+	}
+	delete(entries, openclawPluginID)
+	if len(entries) == 0 {
+		delete(plugins, "entries")
+	}
+	if len(plugins) == 0 {
+		delete(root, "plugins")
 	}
 	next, err := marshalConfigLike(old, root)
 	if err != nil {
-		return "", err
+		return err
 	}
-	next = append(next, '\n')
-	return writeIfChanged(path, old, next)
+	_, err = writeIfChanged(path, old, append(next, '\n'))
+	return err
 }
 
 // setOpenClawPluginLoadPath adds the plugin's directory to plugins.load.paths,
@@ -438,10 +462,49 @@ function toolLine(event, ctx) {
   return "";
 }
 
+// The status page behind deja's Control UI tab: deja's status line, refreshed
+// while the tab is open.
+const STATUS_PATH = "/plugins/deja/status";
+function statusPage(line) {
+  const text = line.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  return '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="15"><title>deja</title>' +
+    '<style>body{margin:16px;font:14px ui-monospace,Menlo,Consolas,monospace;color:#888}@media(prefers-color-scheme:light){body{color:#444}}</style>' +
+    "<p>" + text + "</p>";
+}
+
 export default {
   id: %q,
   name: "deja recall",
   register(api) {
+    // The TUI footer takes nothing from plugins. The Control UI does take a
+    // sidebar tab rendering a gateway-auth route in a sandboxed frame, and
+    // unlike native plugin views that needs no Labs switch, so the tab shows
+    // deja's status line. An OpenClaw without these APIs goes without it.
+    if (typeof api.registerHttpRoute === "function") {
+      api.registerHttpRoute({
+        path: STATUS_PATH,
+        auth: "gateway",
+        match: "exact",
+        handler: async (_req, res) => {
+          res.statusCode = 200;
+          res.setHeader("content-type", "text/html; charset=utf-8");
+          res.setHeader("cache-control", "no-store");
+          res.end(statusPage(ask(["statusline"], {}) || "deja"));
+          return true;
+        },
+      });
+      const controls = api.session?.controls?.registerControlUiDescriptor ? api.session.controls : api;
+      if (typeof controls.registerControlUiDescriptor === "function") {
+        controls.registerControlUiDescriptor({
+          id: "status",
+          surface: "tab",
+          label: "deja",
+          description: "What deja recalled for your agents today",
+          path: STATUS_PATH,
+          group: "agent",
+        });
+      }
+    }
     // A tool result middleware rewrites what the model reads back from a
     // tool, which is the one place a line can arrive beside the result it is
     // about. It needs contracts.agentToolResultMiddleware in the manifest and
@@ -457,35 +520,57 @@ export default {
         } catch {}
       }, { runtimes: ["openclaw"] });
     }
-    // What this project settled, at the start of the session. The bootstrap
-    // hook does this in gateway mode and does not run under the local agent,
-    // where a session had no memory of the project at all until it happened to
-    // ask a question the store answered.
+    // What this project settled, at the start of the session. The digest
+    // goes into the Project Context through agent:bootstrap, registered as a
+    // plugin hook: unlike agent_turn_prepare it is not behind
+    // allowConversationAccess, and unlike the hook pack beside this plugin it
+    // runs under --local as well as in the gateway (2026.9.8). The event fires
+    // on every agent run, and in the gateway the pack answers it too; both send
+    // the transcript id with deja_once, so the session gets one digest.
     //
-    // agent_turn_prepare is the phase hook OpenClaw asks new plugins to use —
-    // before_agent_start is kept only for compatibility — and it is also where
-    // queued next-turn injections are drained, so this sits in the right place
-    // if that seam ever starts delivering. It fires once per agent run rather
-    // than once per session, so deja_once is what keeps the digest to the first
-    // of them.
-    api.on(
-      "agent_turn_prepare",
-      async (_event, ctx) => {
-        // The transcript id, not the session key: the live stamp hook-context
-        // writes keeps this session out of its own MCP recall by the id the
-        // index knows it by, and agent:main:main names no transcript (#4582).
-        const at = where(ctx);
-        const digest = ask(["hook-context", "--plain"], {
-          session_id: at.id,
-          cwd: at.cwd,
-          source: "startup",
-          deja_once: true,
-        });
-        if (!digest) return;
-        return { prependContext: digest };
-      },
-      { timeoutMs: 15000 },
-    );
+    // The transcript id, not the session key: the live stamp hook-context
+    // writes keeps this session out of its own MCP recall by the id the index
+    // knows it by, and agent:main:main names no transcript (#4582).
+    const digest = (ctx) => {
+      const at = where(ctx);
+      return ask(["hook-context", "--plain"], {
+        session_id: at.id,
+        cwd: at.cwd,
+        source: "startup",
+        deja_once: true,
+      });
+    };
+    let bootstrap = false;
+    // A plugin hook is wired only while hooks.internal.enabled is not false.
+    if (typeof api.registerHook === "function" && api.config?.hooks?.internal?.enabled !== false) {
+      try {
+        api.registerHook(
+          "agent:bootstrap",
+          async (event) => {
+            const context = event?.context;
+            if (!context || !Array.isArray(context.bootstrapFiles)) return;
+            const text = digest(context);
+            if (!text) return;
+            context.bootstrapFiles.push({ name: "DEJA-RECALL.md", path: "deja://recall", content: text, missing: false });
+          },
+          { name: "deja-digest", description: "deja's digest of this project's past sessions" },
+        );
+        bootstrap = true;
+      } catch {}
+    }
+    // Without plugin hooks the digest goes in front of the first prompt
+    // instead, which 2026.8.1+ runs only with allowConversationAccess.
+    if (!bootstrap) {
+      api.on(
+        "agent_turn_prepare",
+        async (_event, ctx) => {
+          const text = digest(ctx);
+          if (!text) return;
+          return { prependContext: text };
+        },
+        { timeoutMs: 15000 },
+      );
+    }
     api.on(
       "before_prompt_build",
       async (event, ctx) => {

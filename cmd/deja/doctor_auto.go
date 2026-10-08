@@ -66,6 +66,18 @@ func autoWirings() []autoWiring {
 		// session-start loading, and a print-mode run carried the recall block
 		// into the request (#3651).
 		{"gjc", func() string { return filepath.Join(sources.GjcConfigDir(), "extensions", "deja.ts") }, "hook-context", ""},
+		// Cherry Studio's Claude agents read the settings.json in the
+		// CLAUDE_CONFIG_DIR the app gives them.
+		{"cherrystudio", func() string {
+			return filepath.Join(sources.CherryStudioClaudeConfigDir(), "settings.json")
+		}, "hook-context", ""},
+		// CodeWhale's TUI hooks, in the config.toml beside its sessions.
+		{"codewhale", func() string { return codewhaleConfigPath() }, "hook-codewhale", ""},
+		// Junie's user hooks; SessionStart's output never reaches its model,
+		// so the digest rides the first prompt's hook.
+		{"junie", func() string { return junieConfigPath() }, "hook-context", ""},
+		// Kimchi loads it from its harness directory without a trust prompt.
+		{"kimchi", func() string { return filepath.Join(sources.KimchiConfigDir(), "extensions", "deja.ts") }, "hook-context", ""},
 		{"hermes", func() string {
 			return filepath.Join(sources.HermesHome(), "plugins", "deja", "__init__.py")
 		}, "hook-context", ""},
@@ -88,9 +100,9 @@ func autoWirings() []autoWiring {
 		// that holds its other user settings; the file exists whether deja
 		// wrote to it or not.
 		{"devin", func() string { return devinConfigPath() }, "hook-context", ""},
-		// kiro-cli runs hooks from the agent a chat starts in; deja's is its
-		// own agent file (#4304).
-		{"kiro", func() string { return kiroAgentPath() }, "hook-context", ""},
+		// The global hook file the IDE and kiro-cli's V3 engine read for every
+		// chat; V2 runs the same hooks from deja's agent file (#4304).
+		{"kiro", func() string { return kiroGlobalHooksPath() }, "hook-context", ""},
 		// Copilot CLI and VS Code Copilot Chat read deja's one hook file. The
 		// marker is the per-prompt line with its flag: a plain line answers in
 		// Claude's envelope, which Copilot CLI runs and drops, and an install
@@ -124,7 +136,7 @@ func autoWirings() []autoWiring {
 // rather than one deja writes whole. Those exist whether deja ever wrote to
 // them or not, so the file being there says nothing about deja (#4275).
 var autoInClientConfig = map[string]bool{
-	"cursor": true, "qwen": true, "codebuddy": true, "workbuddy": true, "trae": true, "trae-ide": true, "muse": true, "kimi": true, "crush": true, "zcode": true, "commandcode": true,
+	"cursor": true, "qwen": true, "codebuddy": true, "workbuddy": true, "trae": true, "trae-ide": true, "muse": true, "kimi": true, "crush": true, "zcode": true, "commandcode": true, "junie": true,
 	"copilot": true, "devin": true,
 }
 
@@ -286,8 +298,9 @@ func autoWiringState(a autoWiring) (state string, binaryMissing bool) {
 		state = "stale"
 	case a.name == "openclaw" && openclawPluginMissing():
 		state = "stale"
-	// Written, and nothing starts it: kiro-cli runs kiro_default unless the
-	// default agent is deja's or a chat names it (#4304).
+	// Written, and the CLI's default V2 engine does not start it: that runs
+	// kiro_default unless the default agent is deja's or a chat names it
+	// (#4304). The IDE and --v3 run the global file regardless.
 	case a.name == "kiro" && kiroDefaultAgent() != "deja":
 		state = "installed"
 	default:
@@ -421,7 +434,7 @@ func doctorAutoRecall(w io.Writer) {
 		case a.name == "openclaw" && openclawPluginMissing():
 			fmt.Fprintf(w, "  %-12s %-11s %s  (deja's plugin is not in %s — `openclaw agent --local` and `openclaw chat` get no recall; `deja install openclaw-auto`)\n", a.name, "stale", reportPath(path), reportPath(openclawPluginDir()))
 		case a.name == "kiro" && kiroDefaultAgent() != "deja":
-			fmt.Fprintf(w, "  %-12s %-11s %s  (runs only in `kiro-cli chat --agent deja`; `kiro-cli agent set-default deja` makes it every chat's)\n", a.name, "installed", reportPath(path))
+			fmt.Fprintf(w, "  %-12s %-11s %s  (the IDE and `kiro-cli --v3` run it in every chat; the default V2 engine only in `kiro-cli chat --agent deja`, and `kiro-cli agent set-default deja` makes it every chat's)\n", a.name, "installed", reportPath(path))
 		default:
 			fmt.Fprintf(w, "  %-12s %-11s %s%s\n", a.name, "wired", reportPath(path), note)
 			if off := autoWiringSwitchedOff(a.name); off != "" {

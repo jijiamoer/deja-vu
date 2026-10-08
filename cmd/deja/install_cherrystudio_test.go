@@ -126,3 +126,50 @@ func TestCherryStudioImportFileMatchesTheAppsStrictSchema(t *testing.T) {
 		t.Errorf("type = %v, want stdio (one of the four literals the schema accepts)", entry["type"])
 	}
 }
+
+// Cherry Studio's Claude agents run with CLAUDE_CONFIG_DIR at
+// <userData>/Data/Agents/.claude, and a moved store (boot-config.json) moves
+// it. Every Claude hook deja wires goes there, and uninstall takes them out.
+func TestInstallCherryStudioAutoWritesClaudeHooksWhereTheAppPointsClaude(t *testing.T) {
+	hermeticEnv(t)
+	home := os.Getenv("HOME")
+	moved := filepath.Join(home, "cherry-data")
+	if err := os.MkdirAll(filepath.Join(moved, "Data"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(moved, "Data", "cherrystudio.sqlite"), nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	boot, err := json.Marshal(map[string]any{"app.user_data_path": map[string]string{"/Applications/Cherry Studio.app": moved}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFileMkdir(t, filepath.Join(home, ".cherrystudio", "boot-config.json"), string(boot))
+
+	if _, err := installCherryStudioAuto("/usr/local/bin/deja", false); err != nil {
+		t.Fatal(err)
+	}
+	settings := filepath.Join(moved, "Data", "Agents", ".claude", "settings.json")
+	var root struct {
+		Hooks map[string][]struct {
+			Hooks []struct {
+				Command string `json:"command"`
+			} `json:"hooks"`
+		} `json:"hooks"`
+	}
+	if err := json.Unmarshal([]byte(readFile(t, settings)), &root); err != nil {
+		t.Fatalf("settings.json: %v", err)
+	}
+	for _, h := range claudeHookWiring {
+		blocks := root.Hooks[h.Event]
+		if len(blocks) == 0 || len(blocks[0].Hooks) == 0 || !strings.Contains(blocks[0].Hooks[0].Command, h.Sub) {
+			t.Errorf("%s does not run %s: %+v", h.Event, h.Sub, blocks)
+		}
+	}
+	if _, err := installCherryStudioAuto("/usr/local/bin/deja", true); err != nil {
+		t.Fatal(err)
+	}
+	if b, err := os.ReadFile(settings); err == nil && strings.Contains(string(b), "hook-context") {
+		t.Errorf("uninstall left the hooks:\n%s", b)
+	}
+}

@@ -43,6 +43,9 @@ var readmeGuidanceNames = map[string]string{
 	"vscode":      "VS Code Copilot Chat",
 	"trae":        "TRAE CLI",
 	"trae-ide":    "TRAE IDE",
+	"codewhale":   "CodeWhale",
+	"zcode":       "ZCode",
+	"junie":       "Junie",
 	// Grok is named in its own sentence in the same paragraph, because the
 	// home copy only applies when a project has no .grok/GROK.md.
 	"grok": "Grok",

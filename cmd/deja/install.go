@@ -957,6 +957,8 @@ func installTarget(target, exe string, uninstall bool) (installResult, error) {
 		return installKilocodeAuto(exe, uninstall)
 	case "cherrystudio":
 		return installCherryStudio(exe, uninstall)
+	case "cherrystudio-auto":
+		return installCherryStudioAuto(exe, uninstall)
 	case "kiro":
 		return installKiro(exe, uninstall)
 	case "kiro-auto":
@@ -967,6 +969,18 @@ func installTarget(target, exe string, uninstall bool) (installResult, error) {
 		return installSenpiAuto(exe, uninstall)
 	case "kimchi":
 		return installKimchi(exe, uninstall)
+	case "kimchi-auto":
+		return installKimchiAuto(exe, uninstall)
+	case "codewhale":
+		return installCodeWhale(exe, uninstall)
+	case "codewhale-auto":
+		return installCodeWhaleAuto(exe, uninstall)
+	case "junie":
+		return installJunie(exe, uninstall)
+	case "junie-auto":
+		return installJunieAuto(exe, uninstall)
+	case "jetbrains":
+		return installJetBrains(exe, uninstall)
 	case "gjc":
 		return installGjc(exe, uninstall)
 	case "gjc-auto":
@@ -1013,7 +1027,15 @@ func installTarget(target, exe string, uninstall bool) (installResult, error) {
 	case "vscode", "copilot-chat":
 		return installVSCode(exe, uninstall)
 	case "vscode-auto", "copilot-chat-auto":
-		return installVSCodeAuto(exe, uninstall)
+		hooks, err := installVSCodeAuto(exe, uninstall)
+		if err != nil {
+			return installResult{}, err
+		}
+		status, err := installVSCodeStatusItem(exe, uninstall)
+		if err != nil {
+			return installResult{}, err
+		}
+		return wroteAll(hooks, status), nil
 	case "hermes":
 		return installHermesMCP(exe, uninstall)
 	case "hermes-auto":
@@ -1090,6 +1112,7 @@ func wroteAll(rs ...installResult) installResult {
 		}
 	}
 	var also []string
+	seen := map[string]bool{}
 	for _, r := range rs {
 		if r.Path != "" && r.Path == out.Path && r.Note != "" && !strings.Contains(out.Note, r.Note) {
 			// A second write to the same file with something to say: the
@@ -1103,7 +1126,9 @@ func wroteAll(rs ...installResult) installResult {
 		// does anything the other result was already carrying: the
 		// kept-snapshot line reads these paths, and a second run that changes
 		// nothing still has a snapshot beside each of them (review of #3389).
-		out.also = append(out.also, r.Path)
+		if !slices.Contains(out.also, r.Path) {
+			out.also = append(out.also, r.Path)
+		}
 		out.also = append(out.also, r.also...)
 		if r.Action == "unchanged" {
 			// A write that changed nothing can still have something to say: an
@@ -1114,6 +1139,15 @@ func wroteAll(rs ...installResult) installResult {
 			}
 			continue
 		}
+		// Two writes to one file — TRAE's MCP entry and status line — are one
+		// line in the report, not "created" and then "updated" about it.
+		if seen[r.Path] {
+			if r.Note != "" {
+				also = append(also, r.Note)
+			}
+			continue
+		}
+		seen[r.Path] = true
 		line := fmt.Sprintf("also %s %s", r.Action, shortHome(r.Path))
 		// The other write's own note rides with its line: gemini's extension
 		// says what switch it left on, and that was lost with the result.
@@ -1163,7 +1197,11 @@ func installAntigravityAuto(exe string, uninstall bool) (installResult, error) {
 	if err != nil {
 		return installResult{}, err
 	}
-	return wroteAll(mcp, plugin), nil
+	status, err := installAntigravityStatusline(exe, uninstall)
+	if err != nil {
+		return installResult{}, err
+	}
+	return wroteAll(mcp, plugin, status), nil
 }
 
 func installOpenClawAuto(exe string, uninstall bool) (installResult, error) {
@@ -1536,7 +1574,7 @@ func mentionsDeja(b []byte) bool {
 	// path deja was installed from, which need not end in "deja" at all.
 	for _, marker := range []string{
 		"hook-prompt", "hook-context", "hook-tool", "hook-goose", "hook-plan",
-		"hook-precompact", "hook-antigravity", "deja:", "\"deja\"", "deja-recall",
+		"hook-precompact", "hook-antigravity", "hook-codewhale", "deja:", "\"deja\"", "deja-recall",
 		// The harnesses that do not write the word on its own: zed names the
 		// server, dsh opens a block, codex and grok put the name in a TOML
 		// table header, and aider only points at deja's context file. Without
@@ -2049,8 +2087,17 @@ var claudeHookWiring = []struct{ Event, Sub, Matcher string }{
 }
 
 func installClaudeHook(exe string, uninstall bool) (installResult, error) {
+	var events []string
+	for _, h := range claudeWiring() {
+		events = append(events, h.Event)
+	}
+	return installClaudeHooksAt(filepath.Join(sources.ClaudeConfigDir(), "settings.json"), exe, events, uninstall)
+}
+
+// installClaudeHooksAt writes deja's Claude Code hooks into one settings.json,
+// keeping the events named and taking every other deja hook out.
+func installClaudeHooksAt(path, exe string, events []string, uninstall bool) (installResult, error) {
 	exe = hookExeFor(exe, uninstall)
-	path := filepath.Join(sources.ClaudeConfigDir(), "settings.json")
 	old, err := readConfig(path)
 	if err != nil {
 		return installResult{}, err
@@ -2066,8 +2113,8 @@ func installClaudeHook(exe string, uninstall bool) (installResult, error) {
 	// written: one it does not know fails the whole file (#4488).
 	keep := map[string]bool{}
 	if !uninstall {
-		for _, h := range claudeWiring() {
-			keep[h.Event] = true
+		for _, e := range events {
+			keep[e] = true
 		}
 	}
 	for _, h := range claudeHookWiring {
@@ -2184,6 +2231,7 @@ func retiredDejaHook(existing any) bool {
 // two from drifting, the same arrangement helpHidden uses.
 var hookNames = map[string]bool{
 	"hook-antigravity":  true,
+	"hook-codewhale":    true,
 	"hook-context":      true,
 	"hook-goose":        true,
 	"hook-goose-prompt": true,
@@ -2216,6 +2264,12 @@ func hookCommandKindOf(existing any, cmd string) hookCommandKind {
 	}
 	s, cmd = unwrapPowerShellHook(s), unwrapPowerShellHook(cmd)
 	sub := cmd[strings.LastIndex(cmd, " ")+1:]
+	// A line that ends in flags is told apart by all of them: Junie runs
+	// `hook-context --plain --once --junie` and `hook-prompt --plain --junie`
+	// on one event, and the last word alone made each of them the other's.
+	if i := strings.LastIndex(cmd, " hook-"); i >= 0 && strings.Contains(cmd[i+1:], " ") {
+		sub = cmd[i+1:]
+	}
 	for i := 0; i < len(s); {
 		j := strings.Index(s[i:], " "+sub)
 		if j < 0 {
@@ -5025,7 +5079,7 @@ func installTargetNames() []string {
 		"cline", "cline-auto",
 		"goose", "goose-auto",
 		"crush", "crush-auto",
-		"grok", "grok-auto", "copilot", "copilot-auto", "roo", "kilocode", "kilocode-auto", "cherrystudio", "kiro", "kiro-auto", "senpi", "senpi-auto", "kimchi", "gjc", "gjc-auto", "zcode", "zcode-auto", "commandcode", "commandcode-auto", "aider",
+		"grok", "grok-auto", "copilot", "copilot-auto", "roo", "kilocode", "kilocode-auto", "cherrystudio", "cherrystudio-auto", "kiro", "kiro-auto", "senpi", "senpi-auto", "kimchi", "kimchi-auto", "codewhale", "codewhale-auto", "junie", "junie-auto", "jetbrains", "gjc", "gjc-auto", "zcode", "zcode-auto", "commandcode", "commandcode-auto", "aider",
 		// Continue keeps the server and the slash command in one assistant
 		// config, and its skill in the folder beside it; there is no hook to
 		// wire, so there is nothing an -auto target would add (#3062).
@@ -5180,6 +5234,9 @@ func existingTargetChecks() map[string]string {
 		"kiro":         sources.KiroRoot(),
 		"senpi":        sources.SenpiRoot(),
 		"kimchi":       sources.KimchiRoot(),
+		"codewhale":    sources.CodeWhaleRoot(), // its sessions; deja creates mcp.json
+		"junie":        sources.JunieRoot(),     // its sessions; deja creates config.json and mcp/
+		"jetbrains":    sources.JetBrainsRoot(), // the IDEs' config; deja writes ~/.ai/mcp
 		"gjc":          sources.GjcRoot(),
 		"zcode":        sources.ZCodeRoot(),
 		"commandcode":  commandCodeFirstRoot(),

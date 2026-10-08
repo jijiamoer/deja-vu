@@ -107,6 +107,15 @@ var sharedSkillHarnesses = map[string]bool{
 	// Devin CLI's bundled docs name ~/.agents/skills among the user-level
 	// skill directories it scans, beside ~/.config/devin/skills.
 	"devin": true,
+	// CodeWhale 0.10.0 lists ~/.agents/skills beside its own skills directory
+	// and ~/.claude/skills, and shows each copy it finds; the shared one keeps
+	// it to the copy every other reader here already has.
+	"codewhale": true,
+	// ZCode's skill loader scans ~/.agents/skills (#4802).
+	"zcode": true,
+	// Junie 3110.7 offers the model a skill placed only here, beside its own
+	// $JUNIE_HOME/skills (SkillsService, and a stand).
+	"junie": true,
 }
 
 // sharedSkillPath is the one file all of them read. Claude Code is deliberately
@@ -705,14 +714,15 @@ func guidanceStatus(harness string) string {
 // ownGuidanceFile names the manual a harness's own install target writes,
 // rather than the generic guidance step. Deliberately separate from
 // guidanceOwnsWholeFile, which answers the narrower question of whether that
-// manual is a skill: Kiro's is a steering file, always included rather than
-// opened on demand, and the registry records it as not a skill.
+// manual is a skill.
 func ownGuidanceFile(harness string) string {
 	switch harness {
 	case "kilocode":
 		return kilocodeSkillPath()
 	case "gjc":
 		return gjcSkillPath()
+	case "kimchi":
+		return kimchiSkillPath()
 	case "commandcode":
 		return commandCodeSkillPath()
 	case "cherrystudio":
@@ -720,7 +730,9 @@ func ownGuidanceFile(harness string) string {
 		// whichever agent CLIs the machine has, the shared one among them.
 		return sharedSkillPath()
 	case "kiro":
-		return kiroSteeringPath()
+		// The skill, loaded by both engines; the steering file beside it is
+		// the four lines always in context.
+		return kiroSkillPath()
 	case "cline":
 		// Inside the plugin package too, loaded through its package.json
 		// (#4317).

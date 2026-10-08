@@ -15,7 +15,7 @@ deja indexe tout, des mois en arrière compris, et donne la partie utile
 
 <p align="center"><sub><em>Personne n'a cherché : l'agent a appelé deja de lui-même. Deux exécutions réelles, vrai modèle, vrais appels d'outils, sur un corpus synthétique, donc l'historique de personne n'est publié.</em></sub></p>
 
-<p align="center"><b>deja est pleine dès la première minute : l'historique que 39 agents ont déjà écrit, indexé en quelques secondes, sans modèle et sans étape de collecte à part.</b></p>
+<p align="center"><b>deja est pleine dès la première minute : l'historique que 38 agents ont déjà écrit, indexé en quelques secondes, sans modèle et sans étape de collecte à part.</b></p>
 
 <p align="center"><b>La mémoire pour agents de code la plus précise, la moins chère à faire tourner et la plus rapide que nous ayons pu mesurer.</b></p>
 
@@ -203,7 +203,7 @@ Grok Build · Hermes · Goose · Qwen Code · Kimi Code · pi · omp (Oh My Pi) 
 Copilot CLI · VS Code Copilot Chat · Amp · prime-agent (PrimeIntellect) · Roo Code ·
 Continue · Crush · DeepSeek Harness · Cherry Studio · Senpi · gajae-code · Kimchi Coding ·
 Command Code · ZCode · CodeWhale · Reasonix · Kiro · Kilo Code · CodeBuddy Code ·
-TRAE CLI · Muse Code · Devin CLI · Zed.
+TRAE CLI · Muse Code · Junie · JetBrains AI Assistant · Devin CLI · Zed.
 
 Ce que chacun prend en charge — rappel MCP, rappel automatique, skills, commandes, resume, handoff — se trouve
 dans la [matrice des capacités du README anglais](../../README.md#supported-harnesses). Les emplacements de stockage

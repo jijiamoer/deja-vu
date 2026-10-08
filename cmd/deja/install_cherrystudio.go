@@ -92,6 +92,44 @@ func installCherryStudio(exe string, uninstall bool) (installResult, error) {
 	return out, nil
 }
 
+// installCherryStudioAuto adds Claude Code's hooks in the directory Cherry
+// Studio gives its Claude agents as CLAUDE_CONFIG_DIR. Read out of 2.0.14's
+// main bundle and run on a stand with the app's own SDK, binary, env and
+// options: SessionStart, UserPromptSubmit, PreToolUse and PostToolUse output
+// reached the model, and Stop and SessionEnd fired. Two kinds of agent get
+// none of it, by the app's design: the sealed built-in Support agent loads no
+// settings at all, and an external-CLI provider drops CLAUDE_CONFIG_DIR and
+// reads only the project's settings.
+func installCherryStudioAuto(exe string, uninstall bool) (installResult, error) {
+	base, err := installCherryStudio(exe, uninstall)
+	if err != nil {
+		return installResult{}, err
+	}
+	var events []string
+	for _, h := range claudeHookWiring {
+		events = append(events, h.Event)
+	}
+	path := filepath.Join(sources.CherryStudioClaudeConfigDir(), "settings.json")
+	if !uninstall {
+		noteCreatedDirs(filepath.Dir(path))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			return installResult{}, err
+		}
+	}
+	hooks, err := installClaudeHooksAt(path, exe, events, uninstall)
+	if err != nil {
+		return installResult{}, err
+	}
+	base.also = append(base.also, hooks.Path)
+	if hooks.Action != "unchanged" {
+		base.Note = joinNotes(base.Note, "also "+hooks.Action+" "+shortHome(hooks.Path))
+	}
+	if !uninstall {
+		base.Note = joinNotes(base.Note, "the hooks run in Cherry Studio's own agents, not in the sealed Support agent or an external-CLI provider")
+	}
+	return base, nil
+}
+
 // cherryStudioResult leads with the import file whatever the skill did.
 // wroteAll falls back to the last result when nothing changed, so a second
 // install named SKILL.md as the thing to import (#4343).

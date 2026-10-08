@@ -1,11 +1,11 @@
 ---
 name: deja-history
-description: Search the user's past AI coding sessions. Use when they say things like 'didn't we fix this before', 'what did we decide about X' or 'I already have that', before re-debugging an error that may already be solved, before changing code, config, a dependency or a schedule, and before telling them something on this machine does not exist.
+description: Search the user's past AI coding sessions. Holds what they already settled and never wrote into the repo (naming rules, banned or already-tried tools, required checks before merge, preferred values, who owns what). Use before your first edit in a task, before you call a change done or ready to merge, before you recommend a tool, library, design or reviewer, before re-debugging an error that may already be solved, when they say 'didn't we fix this before', 'what did we decide about X' or 'I already have that', and before telling them something on this machine does not exist.
 ---
 
 Search deja before re-deriving past work: when the user refers to earlier sessions or decisions, before debugging an error, and before implementing something that may already exist. It searches this machine's own history across every AI coding tool used on it, going back further than deja itself was installed.
 
-Before you change code, config, a dependency or a schedule, call deja once with mode recall and the task's key nouns (file, package, table, setting). If a result bears on the change, say so in one line before you act.
+Before your first edit in a task, and again before you call a change done, ready or safe to merge, call deja with mode recall and the task's key nouns (file, package, feature, setting). A rule, a rejected option or a check it returns outranks your defaults: follow it and say so in one line.
 
 Two triggers are easy to miss because they are not questions:
 

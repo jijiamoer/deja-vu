@@ -34,7 +34,7 @@
 <div class="glow"></div>
 <nav><a class="brand" href="../"><img src="../assets/icon.svg" alt="" width="22" height="22">deja-vu</a><span class="spacer"></span><a class="lnk" href="../">Home</a><a class="lnk" href="../guide/getting-started.html">Docs</a><a class="lnk" href="https://github.com/vshulcz/deja-vu">GitHub</a></nav>
 <div class="wrap"><div class="doc">
-<aside><a href="../">&larr; deja-vu</a><div class="grp">Guide</div><a href="../guide/getting-started.html">Getting started</a><a href="../guide/harnesses.html">Harnesses</a><div class="grp">Session formats</div><a href="README.html">All formats</a><a href="aider.html">aider</a><a href="amp.html">Amp</a><a href="antigravity.html">Antigravity</a><a href="cherrystudio.html" aria-current="page">Cherry Studio</a><a href="claude-code.html">Claude Code</a><a href="cline.html">Cline</a><a href="codebuddy.html">CodeBuddy Code</a><a href="codewhale.html">CodeWhale</a><a href="codex.html">Codex CLI</a><a href="commandcode.html">Command Code</a><a href="continue.html">Continue</a><a href="copilot.html">Copilot CLI</a><a href="crush.html">Crush</a><a href="cursor.html">Cursor</a><a href="deepseek.html">DeepSeek Harness</a><a href="devin.html">Devin CLI</a><a href="gjc.html">gajae-code</a><a href="gemini.html">Gemini CLI</a><a href="goose.html">Goose</a><a href="grok.html">Grok Build</a><a href="hermes.html">Hermes</a><a href="kilocode.html">Kilo Code</a><a href="kimchi.html">Kimchi Coding</a><a href="kimi.html">Kimi Code</a><a href="kiro.html">Kiro</a><a href="muse.html">Muse Code</a><a href="omp.html">omp (Oh My Pi)</a><a href="openclaw.html">OpenClaw</a><a href="opencode.html">opencode</a><a href="pi.html">pi</a><a href="prime.html">prime-agent (PrimeIntellect)</a><a href="qwen.html">Qwen Code</a><a href="reasonix.html">Reasonix</a><a href="roo.html">Roo Code</a><a href="senpi.html">Senpi</a><a href="trae.html">TRAE CLI</a><a href="copilot-chat.html">VS Code Copilot Chat</a><a href="zcode.html">ZCode</a><a href="zed.html">Zed</a></aside>
+<aside><a href="../">&larr; deja-vu</a><div class="grp">Guide</div><a href="../guide/getting-started.html">Getting started</a><a href="../guide/harnesses.html">Harnesses</a><div class="grp">Session formats</div><a href="README.html">All formats</a><a href="aider.html">aider</a><a href="amp.html">Amp</a><a href="antigravity.html">Antigravity</a><a href="cherrystudio.html" aria-current="page">Cherry Studio</a><a href="claude-code.html">Claude Code</a><a href="cline.html">Cline</a><a href="codebuddy.html">CodeBuddy Code</a><a href="codewhale.html">CodeWhale</a><a href="codex.html">Codex CLI</a><a href="commandcode.html">Command Code</a><a href="continue.html">Continue</a><a href="copilot.html">Copilot CLI</a><a href="crush.html">Crush</a><a href="cursor.html">Cursor</a><a href="deepseek.html">DeepSeek Harness</a><a href="devin.html">Devin CLI</a><a href="gjc.html">gajae-code</a><a href="gemini.html">Gemini CLI</a><a href="goose.html">Goose</a><a href="grok.html">Grok Build</a><a href="hermes.html">Hermes</a><a href="jetbrains.html">JetBrains AI Assistant</a><a href="junie.html">Junie</a><a href="kilocode.html">Kilo Code</a><a href="kimchi.html">Kimchi Coding</a><a href="kimi.html">Kimi Code</a><a href="kiro.html">Kiro</a><a href="muse.html">Muse Code</a><a href="omp.html">omp (Oh My Pi)</a><a href="openclaw.html">OpenClaw</a><a href="opencode.html">opencode</a><a href="pi.html">pi</a><a href="prime.html">prime-agent (PrimeIntellect)</a><a href="qwen.html">Qwen Code</a><a href="reasonix.html">Reasonix</a><a href="roo.html">Roo Code</a><a href="senpi.html">Senpi</a><a href="trae.html">TRAE CLI</a><a href="copilot-chat.html">VS Code Copilot Chat</a><a href="zcode.html">ZCode</a><a href="zed.html">Zed</a></aside>
 <article>
 <h1>Cherry Studio</h1>
 <ul>
@@ -49,7 +49,7 @@
 </ul>
 <p>Cherry Studio runs Claude Code sessions from a desktop app and writes ordinary</p>
 <p>Claude Code transcripts under its own app data, so the parsing is Claude&#39;s.</p>
-<p><strong>Last verified:</strong> 2026-09-17</p>
+<p><strong>Last verified:</strong> 2026-10-07</p>
 <p>The fixture in this repository sits at <code>fixtures/registry/cherrystudio/projects/…</code> rather than</p>
 <p>under a <code>.claude</code> directory: the repository excludes <code>.claude/</code>, so a fixture carrying that</p>
 <p>segment is never committed and the tests pass only on the machine that wrote it. The parse does</p>
@@ -92,11 +92,16 @@
 <p>shared skill into <code>~/.agents/skills</code>, which is one of those roots, so the</p>
 <p>app lists it; enabling it for the agent is the one click left.</p>
 <ul>
-<li>No hook surface for a third party, so auto-recall is recorded as impossible</li>
+<li>Auto-recall: <code>deja install cherrystudio-auto</code> writes Claude Code&#39;s hooks</li>
 </ul>
-<p>rather than as a gap someone could close: the agent sessions run inside the</p>
-<p>Electron app, and the extension points are the MCP server list and its import</p>
-<p>paths. Same for slash commands.</p>
+<p>into <code>&lt;userData&gt;/Data/Agents/.claude/settings.json</code>, the <code>CLAUDE_CONFIG_DIR</code></p>
+<p>2.0.14 gives the Claude agents it runs (<code>feature.agents.claude.root</code>; a move</p>
+<p>in <code>~/.cherrystudio/boot-config.json</code> moves it). Run with the app&#39;s own SDK,</p>
+<p>binary, env and options against a stub, SessionStart, UserPromptSubmit,</p>
+<p>PreToolUse and PostToolUse output reached the model (#4802). The sealed</p>
+<p>built-in Support agent loads no settings, and an external-CLI provider drops</p>
+<p><code>CLAUDE_CONFIG_DIR</code> and reads only the project&#39;s, so neither gets them. Slash</p>
+<p>commands have no surface for a third party: they are the app&#39;s own.</p>
 <h2 id="the-import-file-checked-against-the-app-s-own-validator">The import file, checked against the app&#39;s own validator</h2>
 <p>Cherry Studio 2.0.14 installed, and its importer read out of the bundle</p>
 <p>(<code>Contents/Resources/app.asar</code>, <code>out/renderer/assets/mcp-uMWTyAhi.js</code>):</p>
@@ -115,7 +120,7 @@
 <p>before it writes any transcript at all.</p>
 
 <hr>
-<p>deja reads this format and thirty-eight others, and turns what it finds into memory your
+<p>deja reads this format and forty others, and turns what it finds into memory your
 agents can search. See the <a href="../guide/harnesses.html">harness matrix</a> for what is
 wired where, or <a href="../guide/getting-started.html">install it</a> and search your own
 history.</p>

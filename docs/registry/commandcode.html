@@ -34,7 +34,7 @@
 <div class="glow"></div>
 <nav><a class="brand" href="../"><img src="../assets/icon.svg" alt="" width="22" height="22">deja-vu</a><span class="spacer"></span><a class="lnk" href="../">Home</a><a class="lnk" href="../guide/getting-started.html">Docs</a><a class="lnk" href="https://github.com/vshulcz/deja-vu">GitHub</a></nav>
 <div class="wrap"><div class="doc">
-<aside><a href="../">&larr; deja-vu</a><div class="grp">Guide</div><a href="../guide/getting-started.html">Getting started</a><a href="../guide/harnesses.html">Harnesses</a><div class="grp">Session formats</div><a href="README.html">All formats</a><a href="aider.html">aider</a><a href="amp.html">Amp</a><a href="antigravity.html">Antigravity</a><a href="cherrystudio.html">Cherry Studio</a><a href="claude-code.html">Claude Code</a><a href="cline.html">Cline</a><a href="codebuddy.html">CodeBuddy Code</a><a href="codewhale.html">CodeWhale</a><a href="codex.html">Codex CLI</a><a href="commandcode.html" aria-current="page">Command Code</a><a href="continue.html">Continue</a><a href="copilot.html">Copilot CLI</a><a href="crush.html">Crush</a><a href="cursor.html">Cursor</a><a href="deepseek.html">DeepSeek Harness</a><a href="devin.html">Devin CLI</a><a href="gjc.html">gajae-code</a><a href="gemini.html">Gemini CLI</a><a href="goose.html">Goose</a><a href="grok.html">Grok Build</a><a href="hermes.html">Hermes</a><a href="kilocode.html">Kilo Code</a><a href="kimchi.html">Kimchi Coding</a><a href="kimi.html">Kimi Code</a><a href="kiro.html">Kiro</a><a href="muse.html">Muse Code</a><a href="omp.html">omp (Oh My Pi)</a><a href="openclaw.html">OpenClaw</a><a href="opencode.html">opencode</a><a href="pi.html">pi</a><a href="prime.html">prime-agent (PrimeIntellect)</a><a href="qwen.html">Qwen Code</a><a href="reasonix.html">Reasonix</a><a href="roo.html">Roo Code</a><a href="senpi.html">Senpi</a><a href="trae.html">TRAE CLI</a><a href="copilot-chat.html">VS Code Copilot Chat</a><a href="zcode.html">ZCode</a><a href="zed.html">Zed</a></aside>
+<aside><a href="../">&larr; deja-vu</a><div class="grp">Guide</div><a href="../guide/getting-started.html">Getting started</a><a href="../guide/harnesses.html">Harnesses</a><div class="grp">Session formats</div><a href="README.html">All formats</a><a href="aider.html">aider</a><a href="amp.html">Amp</a><a href="antigravity.html">Antigravity</a><a href="cherrystudio.html">Cherry Studio</a><a href="claude-code.html">Claude Code</a><a href="cline.html">Cline</a><a href="codebuddy.html">CodeBuddy Code</a><a href="codewhale.html">CodeWhale</a><a href="codex.html">Codex CLI</a><a href="commandcode.html" aria-current="page">Command Code</a><a href="continue.html">Continue</a><a href="copilot.html">Copilot CLI</a><a href="crush.html">Crush</a><a href="cursor.html">Cursor</a><a href="deepseek.html">DeepSeek Harness</a><a href="devin.html">Devin CLI</a><a href="gjc.html">gajae-code</a><a href="gemini.html">Gemini CLI</a><a href="goose.html">Goose</a><a href="grok.html">Grok Build</a><a href="hermes.html">Hermes</a><a href="jetbrains.html">JetBrains AI Assistant</a><a href="junie.html">Junie</a><a href="kilocode.html">Kilo Code</a><a href="kimchi.html">Kimchi Coding</a><a href="kimi.html">Kimi Code</a><a href="kiro.html">Kiro</a><a href="muse.html">Muse Code</a><a href="omp.html">omp (Oh My Pi)</a><a href="openclaw.html">OpenClaw</a><a href="opencode.html">opencode</a><a href="pi.html">pi</a><a href="prime.html">prime-agent (PrimeIntellect)</a><a href="qwen.html">Qwen Code</a><a href="reasonix.html">Reasonix</a><a href="roo.html">Roo Code</a><a href="senpi.html">Senpi</a><a href="trae.html">TRAE CLI</a><a href="copilot-chat.html">VS Code Copilot Chat</a><a href="zcode.html">ZCode</a><a href="zed.html">Zed</a></aside>
 <article>
 <h1>Command Code</h1>
 <ul>
@@ -69,7 +69,7 @@
 <p>The older shape, one flat <code>role</code>/<code>content</code>/<code>timestamp</code>/<code>sessionId</code> line per</p>
 <p>message, is still read. The client migrates such a file to v3 in place the</p>
 <p>next time it opens the session and keeps the old copy as <code>&lt;session&gt;.v2.bak</code>.</p>
-<p><strong>Last verified:</strong> 2026-10-01 (command-code 1.73.4)</p>
+<p><strong>Last verified:</strong> 2026-10-07 (command-code 1.77.0)</p>
 <h2 id="known-quirks-and-drift">Known quirks and drift</h2>
 <ul>
 <li><strong>A sibling with the same extension.</strong> <code>&lt;session&gt;.checkpoints.jsonl</code> sits</li>
@@ -104,12 +104,23 @@
 <p><code>powershell</code>; the hook payload carries the internal tool name and</p>
 <p><code>tool_input.args</code> after <code>command</code>, and both are read (#4540).</p>
 <ul>
-<li>There is no per-prompt event: the four documented are <code>SessionStart</code>,</li>
+<li>There is no per-prompt, compaction or session-end event among the shell</li>
 </ul>
-<p><code>PreToolUse</code>, <code>PostToolUse</code> and <code>Stop</code>, so the digest rides SessionStart.</p>
-<p>The question is answered at the first matched <code>PreToolUse</code> after it: that</p>
-<p>payload names the transcript, the newest turn the person typed is read from</p>
-<p>it, and its recall rides the tool call&#39;s context, once per question.</p>
+<p>hooks: the four documented are <code>SessionStart</code>, <code>PreToolUse</code>, <code>PostToolUse</code></p>
+<p>and <code>Stop</code>, so the digest rides SessionStart. The rest goes through a mod,</p>
+<p><code>~/.commandcode/mods/deja.ts</code>, which <code>commandcode-auto</code> writes and Command</p>
+<p>Code loads at the start of every session. Its <code>transformContext</code> adds the</p>
+<p>question&#39;s recall to the question on each model call of the turn (it never</p>
+<p>writes back, so the transcript keeps the person&#39;s words), <code>onSessionEnd</code></p>
+<p>ends the live stamp, and <code>cmd.ui.setStatus</code> puts <code>deja statusline</code> in the</p>
+<p>TUI footer. A <code>PreToolUse</code> cannot answer the question: a turn reaches the</p>
+<p>transcript only when it commits, after its tool calls (1.77.0 stand).</p>
+<ul>
+<li>Compaction appends <code>{&#34;type&#34;:&#34;compaction&#34;,&#34;summary&#34;,&#34;firstKeptEntryId&#34;}</code> and</li>
+</ul>
+<p>keeps every turn above it. The next matched <code>PreToolUse</code> reads the session</p>
+<p>as it stood before the newest one and answers with the packet, once. The</p>
+<p>summary is indexed as a summary.</p>
 <ul>
 <li>The transcript format above was read off files command-code 1.73.4 wrote</li>
 </ul>
@@ -118,7 +129,7 @@
 <p>akitaonrails/ai-memory&#39;s support matrix.</p>
 
 <hr>
-<p>deja reads this format and thirty-eight others, and turns what it finds into memory your
+<p>deja reads this format and forty others, and turns what it finds into memory your
 agents can search. See the <a href="../guide/harnesses.html">harness matrix</a> for what is
 wired where, or <a href="../guide/getting-started.html">install it</a> and search your own
 history.</p>

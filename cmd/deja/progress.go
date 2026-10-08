@@ -186,9 +186,21 @@ func (p *buildProgress) bar() string {
 	return b.String()
 }
 
+// timeBuild runs a build and records its wall time on the summary it left,
+// so every summary line can say how long it took (#4630).
+func timeBuild(fn func() error) error {
+	started := time.Now()
+	err := fn()
+	index.LastBuild.Took = time.Since(started)
+	return err
+}
+
 // withBuildProgress runs fn with a live build display when stdout is a
-// terminal, and unchanged otherwise.
-func withBuildProgress(fn func() error) error {
+// terminal, and unchanged otherwise. It times fn on every path, not only the
+// animated one: the first `deja search` or `deja warmup` on a fresh machine
+// builds the index here, and its greeting would otherwise have no time.
+func withBuildProgress(build func() error) error {
+	fn := func() error { return timeBuild(build) }
 	// The detached warmup writes to /dev/null, which is a character device and
 	// so passes for a terminal. The live display then replaced the file sink
 	// withWarmupStatus had just installed and painted its animation into the

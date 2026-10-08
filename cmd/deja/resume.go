@@ -23,18 +23,22 @@ func runResume(dir string, args []string, stdout io.Writer) error {
 	if len(args) < 1 {
 		return idPrefixNeeded(dir, "resume needs an id-prefix", "resume needs id-prefix (see `deja last`)")
 	}
-	doExec := false
+	doExec, writeBack := false, false
 	prefix := ""
 	for _, a := range args {
 		if a == "--exec" {
 			doExec = true
 			continue
 		}
+		if a == "--write-back" {
+			writeBack = true
+			continue
+		}
 		// The last argument used to win, so a flag resume does not take, or a
 		// stray word, silently replaced the id and the refusal named it as the
 		// session that was missing (#2251).
 		if strings.HasPrefix(a, "-") && a != "-" {
-			return fmt.Errorf("resume: unknown flag %q — it takes an id-prefix and --exec", a)
+			return fmt.Errorf("resume: unknown flag %q — it takes an id-prefix, --write-back and --exec", a)
 		}
 		if prefix != "" {
 			return fmt.Errorf("resume takes one id-prefix — got %q and %q", prefix, a)
@@ -58,8 +62,21 @@ func runResume(dir string, args []string, stdout io.Writer) error {
 	if err := denyPolicyHidden(prefix, s, os.Stderr); err != nil {
 		return err
 	}
+	indexDir := dir
 	dir, cmdline, err := resumeCommand(s)
+	// Some harnesses' resume reads the directory from the transcript itself
+	// (CodeBuddy, the pi family), which is what is gone: the command is worked
+	// out again once the file is back.
+	if writeBack && (err == nil || (transcriptGone(s) && !strings.HasPrefix(s.Project, "imported:"))) {
+		if werr := writeBackSession(indexDir, s, os.Stderr); werr != nil {
+			return werr
+		}
+		dir, cmdline, err = resumeCommand(s)
+	}
 	if err != nil {
+		if gone := resumeGoneError(s); gone != nil && !writeBack && !strings.HasPrefix(s.Project, "imported:") {
+			return gone
+		}
 		return err
 	}
 	if err := resumeGoneError(s); err != nil {
@@ -240,6 +257,9 @@ var openclawKeyPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._:-]*$`)
 var reasonixPathPattern = regexp.MustCompile(`^[A-Za-z0-9/\\:._~+-]+$`)
 
 // Crush names its sessions with a uuid. Nothing else goes on a command line.
+// Junie names its sessions session-<yymmdd>-<hhmmss>-<suffix>.
+var junieSessionID = regexp.MustCompile(`^session-[0-9]{6}-[0-9]{6}-[0-9a-zA-Z]+$`)
+
 var crushSessionID = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
 // resumeCommand maps a session to (workdir, command). workdir is empty when
@@ -511,6 +531,13 @@ func resumeCommand(s model.Session) (string, string, error) {
 		// project label is a relative path that only resolved from the
 		// workspace's parent (#4362).
 		return existingDir(resumeRecordedDir(s)), "codewhale --resume " + s.ID, nil
+	case "junie":
+		// `--resume` with `--session-id` reopens a saved session (3110.7); it
+		// goes with the project the session was started in.
+		if !junieSessionID.MatchString(s.ID) {
+			return "", "", fmt.Errorf("session id %q is not one junie --session-id takes", s.ID)
+		}
+		return existingDir(resumeRecordedDir(s)), "junie --session-id " + s.ID + " --resume", nil
 	case "reasonix":
 		// `--resume` looks an id up in the store of the workspace it runs in
 		// (the git root of the working directory), so it goes with that
@@ -714,6 +741,8 @@ func resumeRecordedDir(s model.Session) string {
 		return sources.ContinueSessionDir(s.Path)
 	case "codewhale":
 		return sources.CodeWhaleWorkspace(s.Path)
+	case "junie":
+		return sources.JunieSessionProject(s.Path)
 	case "commandcode":
 		return sources.CommandCodeSessionDir(s.Path)
 	case "reasonix":

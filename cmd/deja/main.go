@@ -256,6 +256,9 @@ var commands = map[string]command{
 		}
 		return nil
 	},
+	"hook-codewhale": func(dir string, rest []string) error {
+		return runHookCodeWhale(dir, rest, os.Stdin, os.Stdout)
+	},
 	"hook-stop": func(dir string, _ []string) error {
 		return runHookStop(dir, os.Stdin, os.Stdout)
 	},
@@ -475,6 +478,10 @@ type countingWriter struct {
 	n int
 }
 
+// Unwrap is the writer underneath, so a printer deciding whether it is
+// talking to a terminal sees the terminal rather than the counter (#4620).
+func (c *countingWriter) Unwrap() io.Writer { return c.w }
+
 func (c *countingWriter) Write(p []byte) (int, error) {
 	n, err := c.w.Write(p)
 	c.n += n
@@ -572,7 +579,7 @@ func cmdIndex(dir string, rest []string) error {
 	if quiet {
 		// The live display paints the same progress the sink above is
 		// discarding, and it paints it to stdout.
-		draw = build
+		draw = func() error { return timeBuild(build) }
 	}
 	if err := withWarmupStatus(dir, draw); err != nil {
 		// The command whose whole job is building the index used to pass the
@@ -641,8 +648,8 @@ func cmdIndex(dir string, rest []string) error {
 	// came back from both of that harness's stores is one conversation and
 	// gets no warning, but it is still two transcripts against one row (#2066).
 	if b := index.LastBuild; index.ReportMerged() > 0 && b.Messages > 0 {
-		fmt.Fprintf(said, "deja: indexed %d session%s, %d message%s — the per-harness lines above count transcripts, not rows\n",
-			b.Sessions, pluralS(b.Sessions), b.Messages, pluralS(b.Messages))
+		fmt.Fprintf(said, "deja: indexed %d session%s, %d message%s%s — the per-harness lines above count transcripts, not rows\n",
+			b.Sessions, pluralS(b.Sessions), b.Messages, pluralS(b.Messages), tookSuffix(b.Took))
 	}
 	// A machine with no agent history built an empty index and said nothing:
 	// the step whose whole job is filling memory returned to the prompt after
@@ -672,7 +679,7 @@ func cmdIndex(dir string, rest []string) error {
 	// record of what was built. Piped output has said it all along; this is
 	// the same two numbers for the reader who watched it happen (#867).
 	if b := index.LastBuild; !b.Initial && b.Messages > 0 && logoWanted(os.Stdout) && os.Getenv("DEJA_WARMUP_SENTINEL") == "" {
-		fmt.Fprintf(said, "deja: indexed %d session%s, %d message%s\n", b.Sessions, pluralS(b.Sessions), b.Messages, pluralS(b.Messages))
+		fmt.Fprintf(said, "deja: indexed %d session%s, %d message%s%s\n", b.Sessions, pluralS(b.Sessions), b.Messages, pluralS(b.Messages), tookSuffix(b.Took))
 	}
 	return nil
 }
@@ -1670,6 +1677,13 @@ func searchWithOptions(dir string, args []string, sourceInstance string, bare bo
 	// command is within one edit of what was typed.
 	if mistyped {
 		return errAlreadySaid
+	}
+	// One line, at most once a day, naming a command the reader may not have
+	// met (#4629). Only after an answer, only in a terminal and never for
+	// --json: a pipe, a script or a hook reads the results, not advice. On
+	// stderr, so the results themselves stay what they were.
+	if len(hits) > 0 && !o.JSON && briefWanted(os.Stdout) {
+		maybeTip(os.Stderr, dir+".tip", time.Now())
 	}
 	return nil
 }
@@ -2801,8 +2815,10 @@ var flagsOfOtherCommands = map[string]string{
 	"--before":           "forget",
 	"--to":               "handoff",
 	"--exec":             "resume",
+	"--write-back":       "resume",
 	"--plain":            "hook-prompt",
 	"--crush":            "hook-tool",
+	"--junie":            "hook-prompt",
 	"--no-open":          "view",
 	"--full":             "sync export",
 	"--include-imported": "sync export",
@@ -2829,7 +2845,7 @@ var (
 		"--json", "--html", "--redaction", "--impact", "--card", "--year",
 		"--harness", "--project", "--since", "--role",
 	}
-	doctorFlags   = []string{"--json", "--offline", "--deep"}
+	doctorFlags   = []string{"--json", "--offline", "--deep", "--all"}
 	viewFlags     = []string{"--out", "--no-open"}
 	logFlags      = []string{"--json", "--last"}
 	rememberFlags = []string{"--project", "--tag"}
@@ -3368,6 +3384,8 @@ func printSources(dir string) {
 		{"amp", sources.AmpRoot(), []string{sources.AmpRoot()}, sources.AmpThreadFiles, sources.LoadAmp},
 		{"openclaw", sources.OpenClawRoot(), []string{sources.OpenClawRoot()}, sources.OpenClawStoreFiles, sources.LoadOpenClaw},
 		{"codewhale", sources.CodeWhaleRoot(), sources.CodeWhaleRoots(), sources.CodeWhaleSessionFiles, sources.LoadCodeWhale},
+		{"junie", sources.JunieRoot(), []string{sources.JunieRoot()}, sources.JunieSessionFiles, sources.LoadJunie},
+		{"jetbrains", sources.JetBrainsRoot(), []string{sources.JetBrainsRoot()}, sources.JetBrainsSessionFiles, sources.LoadJetBrains},
 		{"reasonix", sources.ReasonixRoot(), sources.ReasonixRoots(), sources.ReasonixSessionFiles, sources.LoadReasonix},
 		{"muse", sources.MuseRoot(), sources.MuseRoots(), sources.MuseSessionFiles, sources.LoadMuse},
 		{"deepseek", sources.DeepSeekRoot(), []string{sources.DeepSeekRoot()}, sources.DeepSeekSessionFiles, sources.LoadDeepSeek},
@@ -4119,6 +4137,7 @@ func wrapTargets(names []string, indent string, width int) string {
 // comparison.
 var helpHidden = map[string]bool{
 	"help":              true,
+	"hook-codewhale":    true,
 	"hook-context":      true,
 	"hook-goose":        true,
 	"hook-goose-prompt": true,
@@ -4145,14 +4164,14 @@ Usage:
   deja search [flags] <query>   (same, but a query may start with a dash)
   deja show <id-prefix> [--json --harness name] [--offset n] [--limit n]
   deja share <id-prefix>
-  deja resume <id-prefix> [--exec]
+  deja resume <id-prefix> [--write-back] [--exec]
   deja wip [--json]
   deja handoff [--to <agent>] [id-prefix] [--exec]
-  deja hook-prompt [--plain]  (UserPromptSubmit hook: relevance recall per prompt)
-  deja hook-context [--plain] [--once] [--strict] [--copilot] [--notes]  (session start: the project digest, once per session)
+  deja hook-prompt [--plain] [--junie]  (UserPromptSubmit hook: relevance recall per prompt)
+  deja hook-context [--plain] [--once] [--strict] [--copilot] [--notes] [--junie]  (session start: the project digest, once per session)
   deja hook-antigravity (Antigravity PreInvocation hook: inject on first turn)
   deja hook-plan     (PreToolUse ExitPlanMode hook: factual plan/history co-occurrences)
-  deja hook-tool [--plain] [--crush]  (PreToolUse Bash/Edit hook: one line on what this command or file already has)
+  deja hook-tool [--plain] [--crush] [--junie]  (PreToolUse Bash/Edit hook: one line on what this command or file already has)
   deja hook-tool-after  (PostToolUse Bash hook: the command that followed this error before)
   deja check -       (read a plan from stdin and print factual co-occurrences)
   deja view [--no-open]  (browse your memory: sessions, recalls, notes — one local HTML)
@@ -4180,7 +4199,7 @@ Usage:
   deja completion <bash|zsh|fish|powershell>
   deja forget --session <id-prefix> [--project <substring>] [--before <duration|date>] [--dry-run] [--all-matches]
   deja forget --list | --unforget <id>
-  deja doctor [--json] [--deep] [--offline]
+  deja doctor [--json] [--deep] [--offline] [--all]
   deja warmup
   deja index [--rebuild] [--quiet]
   deja embed

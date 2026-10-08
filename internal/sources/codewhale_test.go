@@ -126,6 +126,26 @@ func TestCodeWhaleTellsTwoIdenticalTurnsApart(t *testing.T) {
 	}
 }
 
+// CodeWhale 0.10.0 saves a <turn_meta> text block in every user message, the
+// harness's own date, workspace and posture; the person's words are the rest.
+func TestCodeWhaleDropsTurnMeta(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("DEJA_CODEWHALE_ROOT", root)
+	path := filepath.Join(root, "meta.json")
+	body := `{"metadata":{"id":"meta","title":"t","created_at":"2026-10-07T10:00:00Z","updated_at":"2026-10-07T10:01:00Z","workspace":"/w/m"},
+"messages":[{"role":"user","content":[{"type":"text","text":"say hi"},{"type":"text","text":"<turn_meta>\nCurrent local date: 2026-10-07\nCurrent workspace: /w/m\n</turn_meta>"}]}]}`
+	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	ss, err := ParseCodeWhaleFile(path)
+	if err != nil || len(ss) != 1 || len(ss[0].Messages) != 1 {
+		t.Fatalf("parse: %v, %+v", err, ss)
+	}
+	if got := ss[0].Messages[0].Text; got != "say hi" {
+		t.Errorf("text = %q, want the person's words alone", got)
+	}
+}
+
 // `codewhale fork` records the session it came from, and that file is the only
 // place the edge exists.
 func TestCodeWhaleForkKnowsItsParent(t *testing.T) {

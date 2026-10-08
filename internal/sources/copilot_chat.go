@@ -646,9 +646,14 @@ func copilotChatAppendRequest(s *model.Session, req map[string]any) {
 	if at.IsZero() {
 		at = t
 	}
+	for _, txt := range copilotChatSummaries(req["result"]) {
+		s.Touch(at)
+		s.Messages = append(s.Messages, model.Message{Role: RoleSummary, Text: txt, Time: at})
+	}
 	var speech []string
 	var extras []model.Message
 	copilotChatWalkResponse(req["response"], at, &speech, &extras)
+	extras = append(extras, copilotChatRoundEdits(req, at)...)
 	if txt := strings.TrimSpace(strings.Join(speech, "")); txt != "" {
 		s.Touch(at)
 		s.Messages = append(s.Messages, model.Message{Role: "assistant", Text: txt, Time: at})
@@ -657,6 +662,33 @@ func copilotChatAppendRequest(s *model.Session, req map[string]any) {
 		s.Touch(at)
 		s.Messages = append(s.Messages, extras...)
 	}
+}
+
+// copilotChatSummaries is the text of the summaries a request's compaction
+// wrote: result.metadata.summary {toolCallRoundId, text}, or a list of them
+// under summaries (Copilot Chat 0.68). The response itself only says
+// "Compacted conversation".
+func copilotChatSummaries(result any) []string {
+	r, _ := result.(map[string]any)
+	md, _ := r["metadata"].(map[string]any)
+	if md == nil {
+		return nil
+	}
+	items := copilotChatSlice(md["summaries"])
+	if len(items) == 0 && md["summary"] != nil {
+		items = []any{md["summary"]}
+	}
+	var out []string
+	seen := map[string]bool{}
+	for _, it := range items {
+		m, _ := it.(map[string]any)
+		txt, _ := m["text"].(string)
+		if txt = strings.TrimSpace(txt); txt != "" && !seen[txt] {
+			seen[txt] = true
+			out = append(out, txt)
+		}
+	}
+	return out
 }
 
 func copilotChatUserText(v any) string {
@@ -882,10 +914,10 @@ func copilotChatRefName(m map[string]any) string {
 // A `textEditGroup` part carries the file as a uri and the edits as ranges
 // plus the text that replaced each one. The new text is there in full; the old
 // text is not — the range is all that says what was there — so this is the
-// written side only, and there is nothing in the store for the replaced rule
-// to read. Counted on a local store: 655 edit groups across 34 session files,
-// none of which reached the index, so `deja files`, `restore` and line-level
-// blame were silent for every Copilot Chat user (#595).
+// written side only. The replaced side is in the edit call's arguments, read by
+// copilotChatRoundEdits. Counted on a local store: 655 edit groups across 34
+// session files, none of which reached the index, so `deja files`, `restore`
+// and line-level blame were silent for every Copilot Chat user (#595).
 func copilotChatEdits(m map[string]any, t time.Time, extras *[]model.Message) {
 	path := copilotChatRefPath(m["uri"])
 	if path == "" {

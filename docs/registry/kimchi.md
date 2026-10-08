@@ -1,7 +1,7 @@
 # Kimchi Coding
 
 - **ID**: `kimchi`
-- **Store**: `${KIMCHI_CODING_AGENT_DIR:-${XDG_CONFIG_HOME:-~/.config}/kimchi/harness}/sessions/--<encoded-cwd>--/<session>.jsonl`
+- **Store**: `~/.config/kimchi/harness/sessions/--<encoded-cwd>--/<session>.jsonl`
 - **Read override**: `DEJA_KIMCHI_ROOT` replaces the session root
 - **Format**: pi's session JSONL
 - **Needs**: nothing
@@ -15,7 +15,7 @@ too. Either way the header's `cwd` is what names the project, by its last two
 segments, rather than encoded and decoded back, which could not tell `my-app`
 from `my/app` (#4427, #4457).
 
-**Last verified:** 2026-09-17
+**Last verified:** 2026-10-07
 
 ## Known quirks and drift
 
@@ -33,19 +33,26 @@ from `my/app` (#4427, #4457).
 - A session file directly under the root has no encoded project directory to
   read a name from, so the header line's `cwd` names the project there — the
   same choice omp and prime-agent make (#3678).
-- The default root sits under the config home rather than a dot directory of its
-  own, so `XDG_CONFIG_HOME` moves it. `KIMCHI_CODING_AGENT_DIR` moves it
-  outright.
-- Wiring: `deja install kimchi` writes the server into `<agent dir>/mcp.json`
-  — `join(getAgentDir(), "mcp.json")` in Kimchi's own
-  `src/extensions/mcp-adapter/config.ts`, so `KIMCHI_CODING_AGENT_DIR` moves
-  it for the installer the same way it moves it for the reader.
-- Everything past the tool is behind one of Kimchi's own switches, and both
-  ship disabled: `kimchi resources enable extensions.claude-code-hook-adapter`
-  runs the hooks `deja install claude` already wrote, and
-  `extensions.claude-code-skills` loads the skill from `~/.claude/skills`.
-  deja records those as blocked rather than claiming auto-recall it does not
-  control.
+- The harness directory is always `~/.config/kimchi/harness`. Kimchi 0.1.99
+  sets `KIMCHI_CODING_AGENT_DIR` itself at startup (`src/entry.ts:46-51`),
+  over whatever the shell had, and never reads `XDG_CONFIG_HOME`: a stand with
+  both set still wrote its sessions there. deja used to follow both and read or
+  wrote an empty directory on a machine that set either (#4802).
+- Wiring: `deja install kimchi` writes the server into the harness directory's
+  `mcp.json` (`join(getAgentDir(), "mcp.json")` in Kimchi's
+  `src/extensions/mcp-adapter/config.ts`) and the skill into its `skills/`.
+  Kimchi does not list `~/.agents/skills`. The skill is offered when the
+  config's `skillPaths` includes `.config/kimchi/harness/skills`, which the
+  first-run setup writes by default without a terminal and offers in its
+  wizard with one.
+- `deja install kimchi-auto` adds pi's extension to `extensions/deja.ts`.
+  Kimchi loads it without a trust prompt. On a 0.1.99 stand against a stub
+  endpoint, what its `before_agent_start`, `context` and `tool_result`
+  handlers returned was in the request, and `session_before_compact`,
+  `session_compact` and `session_shutdown` fired (#4802). The extension also
+  registers `/deja`. With it in place, leave Kimchi's
+  `extensions.claude-code-hook-adapter` off: it would run deja's Claude hooks
+  as well and recall everything twice.
 
 ## Measured on a live install
 
@@ -63,6 +70,6 @@ from `my/app` (#4427, #4457).
   one: `hooks.claude-code.user.session-start.0`,
   `…user-prompt-submit.0`, `…pre-tool-use.0`, `…post-tool-use.0`,
   `…pre-compact.0`.
-- What is still unverified here: whether those hooks fire in a turn. Kimchi
-  requires a browser login to its own service before the first prompt, and that
-  is not an account to create on somebody's behalf.
+- A turn needs no browser login: an `apiKey` and `llmEndpoint` in
+  `~/.config/kimchi/config.json` point it at any OpenAI-compatible endpoint,
+  which is how the extension above was measured.

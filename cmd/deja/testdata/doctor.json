@@ -309,6 +309,24 @@
       "indexed_sessions": 0
     },
     {
+      "name": "junie",
+      "state": "missing",
+      "paths": [
+        "<tmp>/home/.junie/sessions"
+      ],
+      "files": 0,
+      "indexed_sessions": 0
+    },
+    {
+      "name": "jetbrains",
+      "state": "missing",
+      "paths": [
+        "<tmp>/home/.config/JetBrains"
+      ],
+      "files": 0,
+      "indexed_sessions": 0
+    },
+    {
       "name": "reasonix",
       "state": "missing",
       "paths": [
@@ -537,6 +555,21 @@
       "path": "<tmp>/home/.config/kimchi/harness/mcp.json"
     },
     {
+      "name": "codewhale",
+      "state": "config-missing",
+      "path": "<tmp>/home/.codewhale/mcp.json"
+    },
+    {
+      "name": "junie",
+      "state": "config-missing",
+      "path": "<tmp>/home/.junie/mcp/mcp.json"
+    },
+    {
+      "name": "jetbrains",
+      "state": "config-missing",
+      "path": "<tmp>/home/.ai/mcp/mcp.json"
+    },
+    {
       "name": "gjc",
       "state": "config-missing",
       "path": "<tmp>/home/.gjc/agent/mcp.json"
@@ -649,6 +682,26 @@
       "path": "<tmp>/home/.gjc/agent/extensions/deja.ts"
     },
     {
+      "name": "cherrystudio",
+      "state": "missing",
+      "path": "<tmp>/home/.config/CherryStudio/Data/Agents/.claude/settings.json"
+    },
+    {
+      "name": "codewhale",
+      "state": "missing",
+      "path": "<tmp>/home/.codewhale/config.toml"
+    },
+    {
+      "name": "junie",
+      "state": "missing",
+      "path": "<tmp>/home/.junie/config.json"
+    },
+    {
+      "name": "kimchi",
+      "state": "missing",
+      "path": "<tmp>/home/.config/kimchi/harness/extensions/deja.ts"
+    },
+    {
       "name": "hermes",
       "state": "missing",
       "path": "<tmp>/home/.hermes/plugins/deja/__init__.py"
@@ -706,7 +759,7 @@
     {
       "name": "kiro",
       "state": "missing",
-      "path": "<tmp>/home/.kiro/agents/deja.json"
+      "path": "<tmp>/home/.kiro/hooks/deja.json"
     },
     {
       "name": "copilot",
@@ -806,6 +859,26 @@
       "path": "<tmp>/home/.workbuddy/commands/deja.md"
     },
     {
+      "name": "zcode",
+      "state": "missing",
+      "path": "<tmp>/home/.zcode/commands/deja.md"
+    },
+    {
+      "name": "junie",
+      "state": "missing",
+      "path": "<tmp>/home/.junie/commands/deja.md"
+    },
+    {
+      "name": "kiro",
+      "state": "missing",
+      "path": "<tmp>/home/.kiro/prompts/deja.md"
+    },
+    {
+      "name": "codewhale",
+      "state": "missing",
+      "path": "<tmp>/home/.codewhale/commands/deja.md"
+    },
+    {
       "name": "copilot-chat",
       "state": "missing",
       "path": "<tmp>/home/.config/Code/User/prompts/deja.prompt.md"
@@ -862,6 +935,16 @@
     },
     {
       "name": "qwen",
+      "state": "missing",
+      "path": "<tmp>/home/.agents/skills/deja-history/SKILL.md"
+    },
+    {
+      "name": "trae",
+      "state": "missing",
+      "path": "<tmp>/home/.agents/skills/deja-history/SKILL.md"
+    },
+    {
+      "name": "muse",
       "state": "missing",
       "path": "<tmp>/home/.agents/skills/deja-history/SKILL.md"
     },

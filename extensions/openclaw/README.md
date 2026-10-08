@@ -3,7 +3,7 @@
 English | [中文](https://github.com/vshulcz/deja-vu/blob/main/extensions/openclaw/docs/zh.md)
 
 OpenClaw remembers its own sessions. This plugin answers the other question:
-what was done in the thirty-eight other coding agents on this machine — Claude
+what was done in the forty other coding agents on this machine — Claude
 Code, Codex, Cursor, Gemini and Zed among them — including the months before
 OpenClaw was installed.
 
@@ -27,8 +27,9 @@ what is missing.
 
 ## What it does
 
-- **At the start of a session** (`agent_turn_prepare`): what this project
-  settled, once per session.
+- **At the start of a session** (`agent:bootstrap`): what this project
+  settled, once per session, in the Project Context. It needs no
+  `allowConversationAccess` and runs under `openclaw agent --local` too.
 - **Before each turn** (`before_prompt_build`): the prompt is matched against
   the index and, when a past session answers it, that session goes in front of
   the model. Silence is the common case.

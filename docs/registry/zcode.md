@@ -13,14 +13,30 @@ does, under the same project layout: `role`, `content`, `timestamp`,
 `sessionId`, one message per line. Some lines also carry the API's `usage`
 block, which deja has no use for and ignores.
 
-**Last verified:** 2026-09-17
+**Last verified:** 2026-10-07
 
 ## Known quirks and drift
 
+- **Compaction.** There is no compaction hook, and the `transcript_path` a
+  hook gets is a temp file holding the one message of that call
+  (`createClaudeCompatibleHookStdin`). The CLI database keeps the session
+  whole: a compaction adds a user message with `semantics.kind:
+  "compact_summary"` and a `compaction` part, and the turns before it stay.
+  The next `UserPromptSubmit` or `PreToolUse` reads the session as it stood
+  before the newest summary and answers with the packet, once. Checked on a
+  3.14.4 stand with `/compact`.
+- **Rules.** `~/.zcode/AGENTS.md` is the user scope of ZCode's instructions,
+  read ahead of the workspace's (`bls`/`mls` in `vendor/zcode.cjs`); a stub
+  endpoint saw it under "user default instructions". `deja rules sync`
+  writes there.
 - **The CLI database is OpenCode's schema with Claude Code's tool names.**
   It goes through OpenCode's schema reader (see below), checked against a
   store the ZCode 3.14.4 runtime wrote, whose tool parts needed their own
   names read (#4428).
+- Skill and command: zcode-app-cli 3.14.4 scans `~/.zcode/skills`, then
+  `~/.agents/skills` (`resolveDefaultSkillRoots`), and `~/.zcode/commands`,
+  then `~/.agents/commands`, expanding `$ARGUMENTS`. deja writes the shared
+  skill and `~/.zcode/commands/deja.md` (#4802).
 - Wiring: `deja install zcode` writes the server into `mcp.servers` in
   `~/.zcode/cli/setting.json` — one level deeper than the `mcpServers` every
   other client here uses — and `deja install zcode-auto` adds the hooks to the

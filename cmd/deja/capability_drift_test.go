@@ -138,7 +138,7 @@ func TestCapabilityRegistryMatchesCode(t *testing.T) {
 			gotCommand = strings.Contains(clinePluginJS("/bin/deja"), "registerCommand")
 		case "hermes":
 			gotCommand = strings.Contains(hermesPluginManifest, "provides_commands")
-		case "pi", "senpi":
+		case "pi", "senpi", "kimchi":
 			// Senpi loads pi's extension unchanged — measured on a live
 			// install, where its `/` palette lists the extension's own `deja`
 			// command (#3670).
@@ -298,6 +298,11 @@ func plausibleSession(t *testing.T, harness string) model.Session {
 		// Grok Build sessions are directories of updates.jsonl; the other rows
 		// under this harness come from the grok-dev database and cannot resume.
 		s.Path = filepath.Join(t.TempDir(), "sessions", "workspace%2Fp", "abc123", "updates.jsonl")
+	}
+	if harness == "junie" {
+		// Junie's ids are session-<yymmdd>-<hhmmss>-<suffix>; nothing else goes
+		// on its command line.
+		s.ID = "session-260901-101500-k3m9"
 	}
 	if harness == "zcode" {
 		// The CLI database's sessions resume, and carry the directory they

@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/vshulcz/deja-vu/internal/sources"
@@ -41,6 +42,8 @@ const (
 	// has passed.
 	deferredTTL = 2 * time.Hour
 )
+
+var deferredSeq atomic.Uint64
 
 func deferredRoot(dir string) string { return filepath.Join(dir, "deferred") }
 
@@ -75,6 +78,7 @@ func deferText(dir, key, hook, text string) {
 	if key == "" || text == "" {
 		return
 	}
+	sweepDeferred(dir)
 	d := filepath.Join(deferredRoot(dir), key)
 	if err := os.MkdirAll(d, 0o700); err != nil {
 		return
@@ -87,12 +91,31 @@ func deferText(dir, key, hook, text string) {
 			}
 		}
 	}
-	name := fmt.Sprintf("%s-%020d", order, time.Now().UnixNano())
+	// Windows' clock can hand two calls in a row the same nanosecond, and the
+	// rename would put the second pair over the first: the sequence and the pid
+	// keep the names apart and the order intact.
+	name := fmt.Sprintf("%s-%020d-%010d-%d", order, time.Now().UnixNano(), deferredSeq.Add(1), os.Getpid())
 	tmp := filepath.Join(d, "."+name)
 	if err := os.WriteFile(tmp, []byte(text), 0o600); err != nil {
 		return
 	}
 	_ = os.Rename(tmp, filepath.Join(d, name))
+}
+
+// sweepDeferred drops what waited past deferredTTL for a session that never
+// came back, or a CodeWhale call whose tool_call_after never fired: takeDeferred
+// would skip it anyway, and nothing else would ever remove it.
+func sweepDeferred(dir string) {
+	root := deferredRoot(dir)
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		return
+	}
+	for _, e := range entries {
+		if fi, err := e.Info(); err == nil && time.Since(fi.ModTime()) > deferredTTL {
+			_ = os.RemoveAll(filepath.Join(root, e.Name()))
+		}
+	}
 }
 
 // hasDeferred is the cheap check every hook pays: one stat of a directory that
@@ -292,6 +315,9 @@ var deferrableHooks = map[string]bool{
 // caught in a file rather than a pipe, so a child the hook detaches (the
 // background index build) cannot hold the read open.
 func runHookDeferred(dir, name string, rest []string, cmd command) error {
+	if hasFlag(rest, "--junie") {
+		return runJunieHook(dir, name, rest, cmd)
+	}
 	if name == "hook-tool" && hasFlag(rest, "--crush") {
 		return runCrushTool(dir, rest, cmd)
 	}
@@ -406,8 +432,9 @@ func runHookStop(dir string, stdin io.Reader, stdout io.Writer) error {
 	key, _ := readDeferredPayload(raw)
 	pending := takeDeferred(dir, key)
 	if pending == "" {
+		turn := gooseStopTurn(raw)
 		var parts []string
-		for _, p := range []string{gooseStopCompaction(dir, raw), gooseStopFixPair(dir, raw)} {
+		for _, p := range []string{gooseStopCompaction(dir, raw), gooseStopFixPair(dir, raw, turn), gooseStopEditLines(dir, raw, turn)} {
 			if p != "" {
 				parts = append(parts, p)
 			}
@@ -449,18 +476,41 @@ func gooseStopCompaction(dir string, raw []byte) string {
 	return strings.TrimSpace(out.String())
 }
 
+type gooseStopPayload struct {
+	SessionID  string `json:"session_id"`
+	WorkingDir string `json:"working_dir"`
+	CWD        string `json:"cwd"`
+}
+
+// gooseStopTurn reads the turn the Stop ends out of sessions.db, once for
+// both answers below.
+func gooseStopTurn(raw []byte) sources.GooseTurnState {
+	var p gooseStopPayload
+	if json.Unmarshal(raw, &p) != nil || p.SessionID == "" {
+		return sources.GooseTurnState{}
+	}
+	return sources.GooseTurn(p.SessionID)
+}
+
+// gooseStopEditLines is the pre-edit line for each file the turn edited.
+// goose drops what PreToolUse prints, so the line arrives when the turn ends,
+// with the edit already made, the way it does on Antigravity.
+func gooseStopEditLines(dir string, raw []byte, turn sources.GooseTurnState) string {
+	var p gooseStopPayload
+	if len(turn.Edits) == 0 || json.Unmarshal(raw, &p) != nil || p.SessionID == "" {
+		return ""
+	}
+	return editFileLines(dir, turn.Edits, p.SessionID, hookCWD(adoptGrok(p.WorkingDir, p.CWD)))
+}
+
 // gooseStopFixPair is the fix pair for the command that failed in this turn,
 // read from goose's store, once per pair and session.
-func gooseStopFixPair(dir string, raw []byte) string {
-	var p struct {
-		SessionID  string `json:"session_id"`
-		WorkingDir string `json:"working_dir"`
-		CWD        string `json:"cwd"`
-	}
+func gooseStopFixPair(dir string, raw []byte, turn sources.GooseTurnState) string {
+	var p gooseStopPayload
 	if json.Unmarshal(raw, &p) != nil || p.SessionID == "" || !planIndexReady(dir) {
 		return ""
 	}
-	out := sources.GooseTurnFailure(p.SessionID)
+	out := turn.Failure
 	if out == "" {
 		return ""
 	}

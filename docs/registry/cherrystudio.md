@@ -12,7 +12,7 @@
 Cherry Studio runs Claude Code sessions from a desktop app and writes ordinary
 Claude Code transcripts under its own app data, so the parsing is Claude's.
 
-**Last verified:** 2026-09-17
+**Last verified:** 2026-10-07
 
 The fixture in this repository sits at `fixtures/registry/cherrystudio/projects/…` rather than
 under a `.claude` directory: the repository excludes `.claude/`, so a fixture carrying that
@@ -49,10 +49,15 @@ the one above.
   the user to enable per agent. `deja install cherrystudio` writes deja's
   shared skill into `~/.agents/skills`, which is one of those roots, so the
   app lists it; enabling it for the agent is the one click left.
-- No hook surface for a third party, so auto-recall is recorded as impossible
-  rather than as a gap someone could close: the agent sessions run inside the
-  Electron app, and the extension points are the MCP server list and its import
-  paths. Same for slash commands.
+- Auto-recall: `deja install cherrystudio-auto` writes Claude Code's hooks
+  into `<userData>/Data/Agents/.claude/settings.json`, the `CLAUDE_CONFIG_DIR`
+  2.0.14 gives the Claude agents it runs (`feature.agents.claude.root`; a move
+  in `~/.cherrystudio/boot-config.json` moves it). Run with the app's own SDK,
+  binary, env and options against a stub, SessionStart, UserPromptSubmit,
+  PreToolUse and PostToolUse output reached the model (#4802). The sealed
+  built-in Support agent loads no settings, and an external-CLI provider drops
+  `CLAUDE_CONFIG_DIR` and reads only the project's, so neither gets them. Slash
+  commands have no surface for a third party: they are the app's own.
 
 ## The import file, checked against the app's own validator
 

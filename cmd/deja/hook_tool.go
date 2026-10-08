@@ -222,6 +222,10 @@ func runHookToolMode(dir string, stdin io.Reader, stdout io.Writer, shape hookTo
 	// answer with the transcript being written (#3945, #3965).
 	markSessionLive(dir, input.SessionID)
 	measureCompactionRecovery(dir, input)
+	// A ZCode compaction in the middle of a turn shows up at the next tool.
+	if !postToolEvent(input.HookEventName) {
+		catchUpZCodeCompaction(dir, precompactHookInput{SessionID: input.SessionID, TranscriptPath: input.TranscriptPath, CWD: input.CWD, WorkspaceRoots: input.WorkspaceRoots})
+	}
 	event := "PreToolUse"
 	if postToolEvent(input.HookEventName) {
 		event = "PostToolUse"
@@ -371,6 +375,9 @@ func toolHookLineSkipping(dir, cwd string, input toolHookInput, used func(string
 		// Copilot CLI writes a new file with create (path in toolArgs), and
 		// VS Code Copilot Chat edits with these, the path under filePath.
 		"create", "replace_string_in_file", "create_file", "insert_edit_into_file",
+		// Kiro's writers, the path under `path` (sources.kiroDialect); its
+		// TUI's `write` is matched above.
+		"fs_write", "fs_append", "str_replace",
 		// pi and omp have no pre-tool seam: the only handler whose return the
 		// model reads is the one holding a finished tool result. An edit there
 		// is already made, so the file's history goes out on their lowercase

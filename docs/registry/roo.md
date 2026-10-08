@@ -59,7 +59,9 @@ the wrong root.
   `alwaysAllow` — without it Roo asks before every recall.
 - **Skill**: the shared `~/.agents/skills/deja-history/SKILL.md`.
 - **Command**: `~/.roo/commands/deja.md`, invoked as `/deja`.
-- **Auto-recall**: none; Roo has no released lifecycle hooks.
+- **Auto-recall**: none. Roo Code is archived (RooCodeInc/Roo-Code, 2026-05-15);
+  the hooks PRs never merged, and the last extension, 3.54.0, has no hook
+  event in its bundle.
 - **Resume**: `roo -w <workspace> --session-id <uuid>`, run in the task's
   workspace, for tasks the CLI created. The `-w` matters: without it the CLI
   looks under the real path of its cwd, and a task created with `-w /tmp/...`
@@ -67,4 +69,4 @@ the wrong root.
   with `deja show` (#4459). Editor tasks reopen from the extension's history UI.
 - **Handoff**: paste.
 
-**Last verified:** 2026-09-07
+**Last verified:** 2026-10-07

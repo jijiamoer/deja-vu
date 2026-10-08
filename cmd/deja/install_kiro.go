@@ -64,6 +64,41 @@ Outside a session: %s search -- "<query>".
 `, exe)
 }
 
+func kiroSkillPath() string {
+	return filepath.Join(sources.KiroConfigDir(), "skills", "deja-history", "SKILL.md")
+}
+
+// kiroGlobalHooksPath is the user-level hook file the V3 engine (`--v3`, and
+// the IDE) reads for every chat, whatever agent it runs: acp-server.js puts
+// ~/.kiro/hooks in globalHookDirs. On a 2.28 stand SessionStart and
+// UserPromptSubmit stdout reached the model and SessionEnd fired on leaving
+// the TUI; 2.22.0 maps SessionEnd to Stop, which fires after every turn.
+// The headless `--v3 --no-interactive` runs none of these. PreToolUse and PostToolUse stdout is dropped by the host
+// (sendStdout:false), so there is no pre-edit line here. The V2 engine, still
+// the CLI default, ignores this file and runs the deja agent's hooks instead.
+func kiroGlobalHooksPath() string {
+	return filepath.Join(sources.KiroConfigDir(), "hooks", "deja.json")
+}
+
+func kiroGlobalHooksJSON(exe string) (string, error) {
+	hook := func(name, trigger string, args ...string) map[string]any {
+		return map[string]any{
+			"name":    name,
+			"trigger": trigger,
+			"action":  map[string]any{"type": "command", "command": hookRun(exe, args...)},
+		}
+	}
+	b, err := json.MarshalIndent(map[string]any{
+		"version": "v1",
+		"hooks": []map[string]any{
+			hook("deja-digest", "SessionStart", "hook-context", "--plain"),
+			hook("deja-recall", "UserPromptSubmit", "hook-prompt", "--plain"),
+			hook("deja-end", "SessionEnd", "hook-session-end"),
+		},
+	}, "", "  ")
+	return string(b) + "\n", err
+}
+
 func installKiro(exe string, uninstall bool) (installResult, error) {
 	res, err := installMCPJSON(kiroMCPSettingsPath(), exe, uninstall)
 	if err != nil {
@@ -73,10 +108,16 @@ func installKiro(exe string, uninstall bool) (installResult, error) {
 	if err != nil {
 		return installResult{}, err
 	}
-	if uninstall {
-		return wroteAll(res, steering), nil
+	// ~/.kiro/skills is loaded by kiro-cli 2.28 in both engines: a probe skill
+	// there was listed in `disclose_context` on a stand.
+	skill, err := installSkillFile(kiroSkillPath(), uninstall)
+	if err != nil {
+		return installResult{}, err
 	}
-	out := wroteAll(res, steering)
+	if uninstall {
+		return wroteAll(res, steering, skill), nil
+	}
+	out := wroteAll(res, steering, skill)
 	out.Note = joinNotes(out.Note, kiroAgentNote)
 	return out, nil
 }
@@ -85,9 +126,8 @@ func installKiro(exe string, uninstall bool) (installResult, error) {
 // `~/.kiro/agents` takes agentSpawn, userPromptSubmit, preToolUse, postToolUse
 // and stop. Measured on 2.22.0, what an agentSpawn or userPromptSubmit hook
 // prints goes in front of the model, the first for the whole conversation;
-// what preToolUse and postToolUse print does not, so there is no pre-edit
-// line here (#4304), and a failed command's fix pair goes out with the next
-// prompt instead.
+// what preToolUse and postToolUse print does not (#4304), so the pre-edit
+// line and a failed command's fix pair go out with the next prompt instead.
 //
 // The hooks go in an agent of deja's own rather than into the reader's: the
 // built-in kiro_default takes no hooks from a file (a kiro_default.json beside
@@ -114,17 +154,18 @@ func kiroAgentJSON(exe string) (string, error) {
 		"hooks": map[string]any{
 			"agentSpawn":       hook("hook-context", "--plain"),
 			"userPromptSubmit": hook("hook-prompt", "--plain"),
-			// What postToolUse prints never reaches the model, so a failed
-			// command's fix pair waits for the next userPromptSubmit
-			// (hook_deferred.go).
+			// What preToolUse and postToolUse print never reaches the model,
+			// so the line about a file before an edit and a failed command's
+			// fix pair wait for the next userPromptSubmit (hook_deferred.go).
+			"preToolUse":  hook("hook-tool", "--defer"),
 			"postToolUse": hook("hook-tool-after", "--defer"),
 		},
 	}, "", "  ")
 	return string(b) + "\n", err
 }
 
-const kiroAutoNote = "kiro-cli runs these hooks in the deja agent: `kiro-cli chat --agent deja`, " +
-	"or `kiro-cli agent set-default deja` for every chat"
+const kiroAutoNote = "the IDE and `kiro-cli --v3` run ~/.kiro/hooks/deja.json in every chat; the default V2 engine " +
+	"runs the hooks only in the deja agent: `kiro-cli chat --agent deja`, or `kiro-cli agent set-default deja`"
 
 func installKiroAuto(exe string, uninstall bool) (installResult, error) {
 	// The server and steering first: an agent of the reader's own named deja
@@ -133,6 +174,11 @@ func installKiroAuto(exe string, uninstall bool) (installResult, error) {
 	if err != nil {
 		return base, err
 	}
+	global, err := installKiroGlobalHooks(exe, uninstall)
+	if err != nil {
+		return installResult{}, err
+	}
+	base = wroteAll(base, global)
 	path := kiroAgentPath()
 	if b, err := os.ReadFile(path); err == nil && !strings.Contains(string(b), kiroAgentDescription) {
 		if !uninstall {
@@ -158,6 +204,22 @@ func installKiroAuto(exe string, uninstall bool) (installResult, error) {
 		out.Note = joinNotes(out.Note, kiroAutoNote)
 	}
 	return out, nil
+}
+
+func installKiroGlobalHooks(exe string, uninstall bool) (installResult, error) {
+	path := kiroGlobalHooksPath()
+	if b, err := os.ReadFile(path); err == nil && !strings.Contains(string(b), `"deja-digest"`) {
+		r := installResult{Path: path, Action: "unchanged"}
+		if !uninstall {
+			r.Note = reportPath(path) + " is a hook file deja did not write, so it was left as it is"
+		}
+		return r, nil
+	}
+	body, err := kiroGlobalHooksJSON(hookExeFor(exe, uninstall))
+	if err != nil {
+		return installResult{}, err
+	}
+	return installTextFile(path, body, uninstall)
 }
 
 // kiroSettingsPath is kiro-cli's own settings file, where

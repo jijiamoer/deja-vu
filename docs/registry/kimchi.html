@@ -34,12 +34,12 @@
 <div class="glow"></div>
 <nav><a class="brand" href="../"><img src="../assets/icon.svg" alt="" width="22" height="22">deja-vu</a><span class="spacer"></span><a class="lnk" href="../">Home</a><a class="lnk" href="../guide/getting-started.html">Docs</a><a class="lnk" href="https://github.com/vshulcz/deja-vu">GitHub</a></nav>
 <div class="wrap"><div class="doc">
-<aside><a href="../">&larr; deja-vu</a><div class="grp">Guide</div><a href="../guide/getting-started.html">Getting started</a><a href="../guide/harnesses.html">Harnesses</a><div class="grp">Session formats</div><a href="README.html">All formats</a><a href="aider.html">aider</a><a href="amp.html">Amp</a><a href="antigravity.html">Antigravity</a><a href="cherrystudio.html">Cherry Studio</a><a href="claude-code.html">Claude Code</a><a href="cline.html">Cline</a><a href="codebuddy.html">CodeBuddy Code</a><a href="codewhale.html">CodeWhale</a><a href="codex.html">Codex CLI</a><a href="commandcode.html">Command Code</a><a href="continue.html">Continue</a><a href="copilot.html">Copilot CLI</a><a href="crush.html">Crush</a><a href="cursor.html">Cursor</a><a href="deepseek.html">DeepSeek Harness</a><a href="devin.html">Devin CLI</a><a href="gjc.html">gajae-code</a><a href="gemini.html">Gemini CLI</a><a href="goose.html">Goose</a><a href="grok.html">Grok Build</a><a href="hermes.html">Hermes</a><a href="kilocode.html">Kilo Code</a><a href="kimchi.html" aria-current="page">Kimchi Coding</a><a href="kimi.html">Kimi Code</a><a href="kiro.html">Kiro</a><a href="muse.html">Muse Code</a><a href="omp.html">omp (Oh My Pi)</a><a href="openclaw.html">OpenClaw</a><a href="opencode.html">opencode</a><a href="pi.html">pi</a><a href="prime.html">prime-agent (PrimeIntellect)</a><a href="qwen.html">Qwen Code</a><a href="reasonix.html">Reasonix</a><a href="roo.html">Roo Code</a><a href="senpi.html">Senpi</a><a href="trae.html">TRAE CLI</a><a href="copilot-chat.html">VS Code Copilot Chat</a><a href="zcode.html">ZCode</a><a href="zed.html">Zed</a></aside>
+<aside><a href="../">&larr; deja-vu</a><div class="grp">Guide</div><a href="../guide/getting-started.html">Getting started</a><a href="../guide/harnesses.html">Harnesses</a><div class="grp">Session formats</div><a href="README.html">All formats</a><a href="aider.html">aider</a><a href="amp.html">Amp</a><a href="antigravity.html">Antigravity</a><a href="cherrystudio.html">Cherry Studio</a><a href="claude-code.html">Claude Code</a><a href="cline.html">Cline</a><a href="codebuddy.html">CodeBuddy Code</a><a href="codewhale.html">CodeWhale</a><a href="codex.html">Codex CLI</a><a href="commandcode.html">Command Code</a><a href="continue.html">Continue</a><a href="copilot.html">Copilot CLI</a><a href="crush.html">Crush</a><a href="cursor.html">Cursor</a><a href="deepseek.html">DeepSeek Harness</a><a href="devin.html">Devin CLI</a><a href="gjc.html">gajae-code</a><a href="gemini.html">Gemini CLI</a><a href="goose.html">Goose</a><a href="grok.html">Grok Build</a><a href="hermes.html">Hermes</a><a href="jetbrains.html">JetBrains AI Assistant</a><a href="junie.html">Junie</a><a href="kilocode.html">Kilo Code</a><a href="kimchi.html" aria-current="page">Kimchi Coding</a><a href="kimi.html">Kimi Code</a><a href="kiro.html">Kiro</a><a href="muse.html">Muse Code</a><a href="omp.html">omp (Oh My Pi)</a><a href="openclaw.html">OpenClaw</a><a href="opencode.html">opencode</a><a href="pi.html">pi</a><a href="prime.html">prime-agent (PrimeIntellect)</a><a href="qwen.html">Qwen Code</a><a href="reasonix.html">Reasonix</a><a href="roo.html">Roo Code</a><a href="senpi.html">Senpi</a><a href="trae.html">TRAE CLI</a><a href="copilot-chat.html">VS Code Copilot Chat</a><a href="zcode.html">ZCode</a><a href="zed.html">Zed</a></aside>
 <article>
 <h1>Kimchi Coding</h1>
 <ul>
 <li><strong>ID</strong>: <code>kimchi</code></li>
-<li><strong>Store</strong>: <code>${KIMCHI_CODING_AGENT_DIR:-${XDG_CONFIG_HOME:-~/.config}/kimchi/harness}/sessions/--&lt;encoded-cwd&gt;--/&lt;session&gt;.jsonl</code></li>
+<li><strong>Store</strong>: <code>~/.config/kimchi/harness/sessions/--&lt;encoded-cwd&gt;--/&lt;session&gt;.jsonl</code></li>
 <li><strong>Read override</strong>: <code>DEJA_KIMCHI_ROOT</code> replaces the session root</li>
 <li><strong>Format</strong>: pi&#39;s session JSONL</li>
 <li><strong>Needs</strong>: nothing</li>
@@ -52,7 +52,7 @@
 <p>too. Either way the header&#39;s <code>cwd</code> is what names the project, by its last two</p>
 <p>segments, rather than encoded and decoded back, which could not tell <code>my-app</code></p>
 <p>from <code>my/app</code> (#4427, #4457).</p>
-<p><strong>Last verified:</strong> 2026-09-17</p>
+<p><strong>Last verified:</strong> 2026-10-07</p>
 <h2 id="known-quirks-and-drift">Known quirks and drift</h2>
 <ul>
 <li>Resume: <code>kimchi --session &lt;id&gt;</code>. Its own argument parser rewrites</li>
@@ -75,24 +75,31 @@
 <p>read a name from, so the header line&#39;s <code>cwd</code> names the project there — the</p>
 <p>same choice omp and prime-agent make (#3678).</p>
 <ul>
-<li>The default root sits under the config home rather than a dot directory of its</li>
+<li>The harness directory is always <code>~/.config/kimchi/harness</code>. Kimchi 0.1.99</li>
 </ul>
-<p>own, so <code>XDG_CONFIG_HOME</code> moves it. <code>KIMCHI_CODING_AGENT_DIR</code> moves it</p>
-<p>outright.</p>
+<p>sets <code>KIMCHI_CODING_AGENT_DIR</code> itself at startup (<code>src/entry.ts:46-51</code>),</p>
+<p>over whatever the shell had, and never reads <code>XDG_CONFIG_HOME</code>: a stand with</p>
+<p>both set still wrote its sessions there. deja used to follow both and read or</p>
+<p>wrote an empty directory on a machine that set either (#4802).</p>
 <ul>
-<li>Wiring: <code>deja install kimchi</code> writes the server into <code>&lt;agent dir&gt;/mcp.json</code></li>
+<li>Wiring: <code>deja install kimchi</code> writes the server into the harness directory&#39;s</li>
 </ul>
-<p>— <code>join(getAgentDir(), &#34;mcp.json&#34;)</code> in Kimchi&#39;s own</p>
-<p><code>src/extensions/mcp-adapter/config.ts</code>, so <code>KIMCHI_CODING_AGENT_DIR</code> moves</p>
-<p>it for the installer the same way it moves it for the reader.</p>
+<p><code>mcp.json</code> (<code>join(getAgentDir(), &#34;mcp.json&#34;)</code> in Kimchi&#39;s</p>
+<p><code>src/extensions/mcp-adapter/config.ts</code>) and the skill into its <code>skills/</code>.</p>
+<p>Kimchi does not list <code>~/.agents/skills</code>. The skill is offered when the</p>
+<p>config&#39;s <code>skillPaths</code> includes <code>.config/kimchi/harness/skills</code>, which the</p>
+<p>first-run setup writes by default without a terminal and offers in its</p>
+<p>wizard with one.</p>
 <ul>
-<li>Everything past the tool is behind one of Kimchi&#39;s own switches, and both</li>
+<li><code>deja install kimchi-auto</code> adds pi&#39;s extension to <code>extensions/deja.ts</code>.</li>
 </ul>
-<p>ship disabled: <code>kimchi resources enable extensions.claude-code-hook-adapter</code></p>
-<p>runs the hooks <code>deja install claude</code> already wrote, and</p>
-<p><code>extensions.claude-code-skills</code> loads the skill from <code>~/.claude/skills</code>.</p>
-<p>deja records those as blocked rather than claiming auto-recall it does not</p>
-<p>control.</p>
+<p>Kimchi loads it without a trust prompt. On a 0.1.99 stand against a stub</p>
+<p>endpoint, what its <code>before_agent_start</code>, <code>context</code> and <code>tool_result</code></p>
+<p>handlers returned was in the request, and <code>session_before_compact</code>,</p>
+<p><code>session_compact</code> and <code>session_shutdown</code> fired (#4802). The extension also</p>
+<p>registers <code>/deja</code>. With it in place, leave Kimchi&#39;s</p>
+<p><code>extensions.claude-code-hook-adapter</code> off: it would run deja&#39;s Claude hooks</p>
+<p>as well and recall everything twice.</p>
 <h2 id="measured-on-a-live-install">Measured on a live install</h2>
 <p><code>@getkimchi/kimchi</code> 0.1.99, in a hermetic HOME:</p>
 <ul>
@@ -116,13 +123,13 @@
 <p><code>…user-prompt-submit.0</code>, <code>…pre-tool-use.0</code>, <code>…post-tool-use.0</code>,</p>
 <p><code>…pre-compact.0</code>.</p>
 <ul>
-<li>What is still unverified here: whether those hooks fire in a turn. Kimchi</li>
+<li>A turn needs no browser login: an <code>apiKey</code> and <code>llmEndpoint</code> in</li>
 </ul>
-<p>requires a browser login to its own service before the first prompt, and that</p>
-<p>is not an account to create on somebody&#39;s behalf.</p>
+<p><code>~/.config/kimchi/config.json</code> point it at any OpenAI-compatible endpoint,</p>
+<p>which is how the extension above was measured.</p>
 
 <hr>
-<p>deja reads this format and thirty-eight others, and turns what it finds into memory your
+<p>deja reads this format and forty others, and turns what it finds into memory your
 agents can search. See the <a href="../guide/harnesses.html">harness matrix</a> for what is
 wired where, or <a href="../guide/getting-started.html">install it</a> and search your own
 history.</p>

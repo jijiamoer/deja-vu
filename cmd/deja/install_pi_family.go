@@ -12,16 +12,11 @@ import (
 // lineage (#3651):
 //
 //   - Kimchi: `join(getAgentDir(), "mcp.json")` in
-//     src/extensions/mcp-adapter/config.ts, with the agent dir honouring
-//     KIMCHI_CODING_AGENT_DIR — the same variable the reader uses.
+//     src/extensions/mcp-adapter/config.ts. The agent dir is always
+//     ~/.config/kimchi/harness: entry.ts sets KIMCHI_CODING_AGENT_DIR itself.
 //   - gajae-code: `~/.gjc/agent/mcp.json` for the user scope, in its
 //     docs/customization.md surface table, which also gives it native skills
 //     at `~/.gjc/agent/skills/<name>/SKILL.md`.
-//
-// What Kimchi does about auto-recall is its own switch, and the registry
-// records it rather than this file pretending to it: it runs deja's Claude Code
-// hooks through a compatibility extension that ships disabled
-// (`kimchi resources enable extensions.claude-code-hook-adapter`).
 //
 // gjc's directory hooks stay unwired for the reason they always were — a
 // TypeScript module whose only documented return is `{block, reason}` has no
@@ -91,18 +86,40 @@ func kimchiMCPPath() string {
 	return filepath.Join(sources.KimchiConfigDir(), "mcp.json")
 }
 
+// kimchiSkillPath is Kimchi's native skill directory. It does not list
+// ~/.agents/skills: on a 0.1.99 stand a probe skill there never reached the
+// model while the one here did.
+func kimchiSkillPath() string {
+	return filepath.Join(sources.KimchiConfigDir(), "skills", "deja-history", "SKILL.md")
+}
+
 func installKimchi(exe string, uninstall bool) (installResult, error) {
 	res, err := installMCPJSON(kimchiMCPPath(), exe, uninstall)
-	if err != nil || uninstall {
+	if err != nil {
 		return res, err
 	}
-	// The two compatibility extensions are how a Kimchi session gets anything
-	// beyond the tool: both ship disabled, so the note names the commands
-	// instead of leaving the user to find out that nothing arrives on its own.
-	res.Note = joinNotes(res.Note, "for recall without asking: `kimchi resources enable "+
-		"extensions.claude-code-hook-adapter` picks up the hooks `deja install claude` writes, "+
-		"and `extensions.claude-code-skills` picks up the skill")
-	return res, nil
+	skill, err := installSkillFile(kimchiSkillPath(), uninstall)
+	if err != nil {
+		return installResult{}, err
+	}
+	return wroteAll(res, skill), nil
+}
+
+// installKimchiAuto adds pi's extension. Kimchi 0.1.99 loads it from the
+// harness directory without a trust prompt, and on a stand what its
+// before_agent_start, context and tool_result handlers returned reached the
+// model; session_before_compact, session_compact and session_shutdown fired.
+// The extension also registers /deja.
+func installKimchiAuto(exe string, uninstall bool) (installResult, error) {
+	base, err := installKimchi(exe, uninstall)
+	if err != nil {
+		return installResult{}, err
+	}
+	ext, err := installPiShapedExtension(sources.KimchiConfigDir(), exe, uninstall)
+	if err != nil {
+		return installResult{}, err
+	}
+	return wroteAll(base, ext), nil
 }
 
 func gjcMCPPath() string {

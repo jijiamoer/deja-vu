@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"time"
 
 	"github.com/vshulcz/deja-vu/internal/index"
 )
@@ -244,8 +245,27 @@ func firstIndexInfo(b index.BuildSummary, tryLine string) []string {
 	}
 	return append(info,
 		"",
-		fmt.Sprintf("indexed %s%d%s message%s across %s%d%s agent%s",
-			logoBold, b.Messages, logoReset, pluralS(b.Messages), logoBold, b.Harnesses, logoReset, pluralS(b.Harnesses)),
+		fmt.Sprintf("indexed %s%d%s message%s across %s%d%s agent%s%s",
+			logoBold, b.Messages, logoReset, pluralS(b.Messages), logoBold, b.Harnesses, logoReset, pluralS(b.Harnesses), tookSuffix(b.Took)),
 		tryLine,
 	)
+}
+
+// tookSuffix is how long a build took, as the end of its summary line:
+// " in 0.15s", " in 3.2s", " in 42s", " in 2m05s". Empty when nothing timed the
+// build, so a line never claims a duration it does not have (#4630).
+func tookSuffix(d time.Duration) string {
+	switch {
+	case d <= 0:
+		return ""
+	case d < time.Second:
+		return fmt.Sprintf(" in %.2fs", d.Seconds())
+	case d < 10*time.Second:
+		return fmt.Sprintf(" in %.1fs", d.Seconds())
+	case d < time.Minute:
+		return fmt.Sprintf(" in %.0fs", d.Seconds())
+	default:
+		d = d.Round(time.Second)
+		return fmt.Sprintf(" in %dm%02ds", int(d.Minutes()), int(d.Seconds())%60)
+	}
 }

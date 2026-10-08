@@ -27,7 +27,10 @@ func TestMain(m *testing.M) {
 		"CODEX_HOME":              "",
 		"GEMINI_CLI_HOME":         "",
 		"CURSOR_CONFIG_DIR":       "",
+		"VSCODE_EXTENSIONS":       "",
 		"AIDER_CHAT_HISTORY_FILE": "",
+		"AIDER_READ":              "",
+		"AIDER_GIT":               "",
 		"XDG_CONFIG_HOME":         "",
 		"XDG_DATA_HOME":           "",
 		"APPDATA":                 filepath.Join(root, "AppData", "Roaming"),
@@ -40,6 +43,15 @@ func TestMain(m *testing.M) {
 		// Set by grok on the hooks it runs, where hook-context and
 		// hook-prompt answer nothing (#4588).
 		"GROK_HOOK_EVENT": "",
+		// Set by CodeWhale on the hooks it runs; a suite run from inside a
+		// CodeWhale session would hand them to hook-codewhale.
+		"DEEPSEEK_SESSION_ID":   "",
+		"DEEPSEEK_TOOL_NAME":    "",
+		"DEEPSEEK_TOOL_ARGS":    "",
+		"DEEPSEEK_WORKSPACE":    "",
+		"DEEPSEEK_TOOL_CALL_ID": "",
+		"DEEPSEEK_TOOL_SUCCESS": "",
+		"DEEPSEEK_TOOL_RESULT":  "",
 		// Guard: hook tests must never spawn a real detached warmup —
 		// os.Executable() inside tests is the test binary itself.
 		"DEJA_WARMUP_SENTINEL":  filepath.Join(root, "warmup-guard"),

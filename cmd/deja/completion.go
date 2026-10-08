@@ -90,7 +90,7 @@ _deja_completion() {
             COMPREPLY=( $(compgen -W "bash zsh fish powershell pwsh" -- "$cur") )
             ;;
         doctor)
-            COMPREPLY=( $(compgen -W "--json --offline --deep" -- "$cur") )
+            COMPREPLY=( $(compgen -W "--json --offline --deep --all" -- "$cur") )
             ;;
         forget)
             COMPREPLY=( $(compgen -W "--list --dry-run --session --project --before --unforget --all-matches" -- "$cur") )
@@ -136,7 +136,7 @@ _deja_completion() {
             fi
             ;;
         resume)
-            COMPREPLY=( $(compgen -W "--exec" -- "$cur") )
+            COMPREPLY=( $(compgen -W "--exec --write-back" -- "$cur") )
             ;;
         secrets)
             if [[ "$prev" == "--limit" ]]; then
@@ -262,7 +262,7 @@ _deja() {
       _values 'shell' bash zsh fish powershell pwsh
       ;;
     doctor)
-      _arguments '--json[print JSON]' '--offline[skip version check]' '--deep[verify index against sources]'
+      _arguments '--json[print JSON]' '--offline[skip version check]' '--deep[verify index against sources]' '--all[list every store, missing ones included]'
       ;;
     forget)
       _arguments '--list[list tombstones]' '--dry-run[show changes without applying]' '--session=[session ID prefix]:session:' '--project=[project substring]:project:' '--before=[duration or date]:time:' '--unforget=[tombstone ID]:ID:' '--all-matches[act on every match]'
@@ -296,7 +296,7 @@ _deja() {
       fi
       ;;
     resume)
-      _arguments '--exec[launch the native harness]' '1:session ID prefix:'
+      _arguments '--exec[launch the native harness]' '--write-back[write a deleted transcript back from the index]' '1:session ID prefix:'
       ;;
     secrets)
       _arguments '--limit=[maximum findings]:count:' '--json[print JSON]' '--scrub[rewrite files to remove secrets]' '--dry-run[show what --scrub would change]'
@@ -364,6 +364,7 @@ complete -c deja -n '__fish_seen_subcommand_from bench; and __fish_seen_subcomma
 complete -c deja -n '__fish_seen_subcommand_from doctor' -l json
 complete -c deja -n '__fish_seen_subcommand_from doctor' -l offline
 complete -c deja -n '__fish_seen_subcommand_from doctor' -l deep
+complete -c deja -n '__fish_seen_subcommand_from doctor' -l all
 complete -c deja -n '__fish_seen_subcommand_from forget; and not __fish_seen_subcommand_from sync' -l list
 complete -c deja -n '__fish_seen_subcommand_from forget; and not __fish_seen_subcommand_from sync' -l dry-run
 complete -c deja -n '__fish_seen_subcommand_from forget; and not __fish_seen_subcommand_from sync' -l session -r
@@ -398,6 +399,7 @@ complete -c deja -n '__fish_seen_subcommand_from rules; and __fish_seen_subcomma
 complete -c deja -n '__fish_seen_subcommand_from rules; and __fish_seen_subcommand_from candidates' -l limit -r
 complete -c deja -n '__fish_seen_subcommand_from rules; and __fish_seen_subcommand_from candidates' -l since -r
 complete -c deja -n '__fish_seen_subcommand_from resume' -l exec
+complete -c deja -n '__fish_seen_subcommand_from resume' -l write-back -d 'Write a deleted transcript back from the index'
 complete -c deja -n '__fish_seen_subcommand_from secrets' -l limit -r
 complete -c deja -n '__fish_seen_subcommand_from secrets' -l json
 complete -c deja -n '__fish_seen_subcommand_from secrets' -l scrub -d 'Rewrite files to remove secrets'
@@ -464,7 +466,7 @@ Register-ArgumentCompleter -Native -CommandName deja -ScriptBlock {
                 else { @('--json', '--seed') }
             }
             'completion' { @('bash', 'zsh', 'fish', 'powershell', 'pwsh') }
-            'doctor' { @('--json', '--offline', '--deep') }
+            'doctor' { @('--json', '--offline', '--deep', '--all') }
             'forget' { @('--list', '--dry-run', '--session', '--project', '--before', '--unforget', '--all-matches') }
             'handoff' {
                 if ($previous -eq '--to') { $handoffTargets }
@@ -485,7 +487,7 @@ Register-ArgumentCompleter -Native -CommandName deja -ScriptBlock {
                 elseif ($action -eq 'candidates' -and $previous -notin @('--limit', '--since')) { @('--json', '--limit', '--since') }
                 else { @() }
             }
-            'resume' { @('--exec') }
+            'resume' { @('--exec', '--write-back') }
             'secrets' {
                 if ($previous -eq '--limit') { @() }
                 else { @('--limit', '--json', '--scrub', '--dry-run') }

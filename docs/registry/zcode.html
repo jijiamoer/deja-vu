@@ -34,7 +34,7 @@
 <div class="glow"></div>
 <nav><a class="brand" href="../"><img src="../assets/icon.svg" alt="" width="22" height="22">deja-vu</a><span class="spacer"></span><a class="lnk" href="../">Home</a><a class="lnk" href="../guide/getting-started.html">Docs</a><a class="lnk" href="https://github.com/vshulcz/deja-vu">GitHub</a></nav>
 <div class="wrap"><div class="doc">
-<aside><a href="../">&larr; deja-vu</a><div class="grp">Guide</div><a href="../guide/getting-started.html">Getting started</a><a href="../guide/harnesses.html">Harnesses</a><div class="grp">Session formats</div><a href="README.html">All formats</a><a href="aider.html">aider</a><a href="amp.html">Amp</a><a href="antigravity.html">Antigravity</a><a href="cherrystudio.html">Cherry Studio</a><a href="claude-code.html">Claude Code</a><a href="cline.html">Cline</a><a href="codebuddy.html">CodeBuddy Code</a><a href="codewhale.html">CodeWhale</a><a href="codex.html">Codex CLI</a><a href="commandcode.html">Command Code</a><a href="continue.html">Continue</a><a href="copilot.html">Copilot CLI</a><a href="crush.html">Crush</a><a href="cursor.html">Cursor</a><a href="deepseek.html">DeepSeek Harness</a><a href="devin.html">Devin CLI</a><a href="gjc.html">gajae-code</a><a href="gemini.html">Gemini CLI</a><a href="goose.html">Goose</a><a href="grok.html">Grok Build</a><a href="hermes.html">Hermes</a><a href="kilocode.html">Kilo Code</a><a href="kimchi.html">Kimchi Coding</a><a href="kimi.html">Kimi Code</a><a href="kiro.html">Kiro</a><a href="muse.html">Muse Code</a><a href="omp.html">omp (Oh My Pi)</a><a href="openclaw.html">OpenClaw</a><a href="opencode.html">opencode</a><a href="pi.html">pi</a><a href="prime.html">prime-agent (PrimeIntellect)</a><a href="qwen.html">Qwen Code</a><a href="reasonix.html">Reasonix</a><a href="roo.html">Roo Code</a><a href="senpi.html">Senpi</a><a href="trae.html">TRAE CLI</a><a href="copilot-chat.html">VS Code Copilot Chat</a><a href="zcode.html" aria-current="page">ZCode</a><a href="zed.html">Zed</a></aside>
+<aside><a href="../">&larr; deja-vu</a><div class="grp">Guide</div><a href="../guide/getting-started.html">Getting started</a><a href="../guide/harnesses.html">Harnesses</a><div class="grp">Session formats</div><a href="README.html">All formats</a><a href="aider.html">aider</a><a href="amp.html">Amp</a><a href="antigravity.html">Antigravity</a><a href="cherrystudio.html">Cherry Studio</a><a href="claude-code.html">Claude Code</a><a href="cline.html">Cline</a><a href="codebuddy.html">CodeBuddy Code</a><a href="codewhale.html">CodeWhale</a><a href="codex.html">Codex CLI</a><a href="commandcode.html">Command Code</a><a href="continue.html">Continue</a><a href="copilot.html">Copilot CLI</a><a href="crush.html">Crush</a><a href="cursor.html">Cursor</a><a href="deepseek.html">DeepSeek Harness</a><a href="devin.html">Devin CLI</a><a href="gjc.html">gajae-code</a><a href="gemini.html">Gemini CLI</a><a href="goose.html">Goose</a><a href="grok.html">Grok Build</a><a href="hermes.html">Hermes</a><a href="jetbrains.html">JetBrains AI Assistant</a><a href="junie.html">Junie</a><a href="kilocode.html">Kilo Code</a><a href="kimchi.html">Kimchi Coding</a><a href="kimi.html">Kimi Code</a><a href="kiro.html">Kiro</a><a href="muse.html">Muse Code</a><a href="omp.html">omp (Oh My Pi)</a><a href="openclaw.html">OpenClaw</a><a href="opencode.html">opencode</a><a href="pi.html">pi</a><a href="prime.html">prime-agent (PrimeIntellect)</a><a href="qwen.html">Qwen Code</a><a href="reasonix.html">Reasonix</a><a href="roo.html">Roo Code</a><a href="senpi.html">Senpi</a><a href="trae.html">TRAE CLI</a><a href="copilot-chat.html">VS Code Copilot Chat</a><a href="zcode.html" aria-current="page">ZCode</a><a href="zed.html">Zed</a></aside>
 <article>
 <h1>ZCode</h1>
 <ul>
@@ -50,14 +50,36 @@
 <p>does, under the same project layout: <code>role</code>, <code>content</code>, <code>timestamp</code>,</p>
 <p><code>sessionId</code>, one message per line. Some lines also carry the API&#39;s <code>usage</code></p>
 <p>block, which deja has no use for and ignores.</p>
-<p><strong>Last verified:</strong> 2026-09-17</p>
+<p><strong>Last verified:</strong> 2026-10-07</p>
 <h2 id="known-quirks-and-drift">Known quirks and drift</h2>
+<ul>
+<li><strong>Compaction.</strong> There is no compaction hook, and the <code>transcript_path</code> a</li>
+</ul>
+<p>hook gets is a temp file holding the one message of that call</p>
+<p>(<code>createClaudeCompatibleHookStdin</code>). The CLI database keeps the session</p>
+<p>whole: a compaction adds a user message with `semantics.kind:</p>
+<p>&#34;compact_summary&#34;<code> and a </code>compaction` part, and the turns before it stay.</p>
+<p>The next <code>UserPromptSubmit</code> or <code>PreToolUse</code> reads the session as it stood</p>
+<p>before the newest summary and answers with the packet, once. Checked on a</p>
+<p>3.14.4 stand with <code>/compact</code>.</p>
+<ul>
+<li><strong>Rules.</strong> <code>~/.zcode/AGENTS.md</code> is the user scope of ZCode&#39;s instructions,</li>
+</ul>
+<p>read ahead of the workspace&#39;s (<code>bls</code>/<code>mls</code> in <code>vendor/zcode.cjs</code>); a stub</p>
+<p>endpoint saw it under &#34;user default instructions&#34;. <code>deja rules sync</code></p>
+<p>writes there.</p>
 <ul>
 <li><strong>The CLI database is OpenCode&#39;s schema with Claude Code&#39;s tool names.</strong></li>
 </ul>
 <p>It goes through OpenCode&#39;s schema reader (see below), checked against a</p>
 <p>store the ZCode 3.14.4 runtime wrote, whose tool parts needed their own</p>
 <p>names read (#4428).</p>
+<ul>
+<li>Skill and command: zcode-app-cli 3.14.4 scans <code>~/.zcode/skills</code>, then</li>
+</ul>
+<p><code>~/.agents/skills</code> (<code>resolveDefaultSkillRoots</code>), and <code>~/.zcode/commands</code>,</p>
+<p>then <code>~/.agents/commands</code>, expanding <code>$ARGUMENTS</code>. deja writes the shared</p>
+<p>skill and <code>~/.zcode/commands/deja.md</code> (#4802).</p>
 <ul>
 <li>Wiring: <code>deja install zcode</code> writes the server into <code>mcp.servers</code> in</li>
 </ul>
@@ -143,7 +165,7 @@ SELECT json_extract(data, &#39;$.type&#39;) FROM part GROUP BY type</code></pre>
 <p>not find it (#4432).</p>
 
 <hr>
-<p>deja reads this format and thirty-eight others, and turns what it finds into memory your
+<p>deja reads this format and forty others, and turns what it finds into memory your
 agents can search. See the <a href="../guide/harnesses.html">harness matrix</a> for what is
 wired where, or <a href="../guide/getting-started.html">install it</a> and search your own
 history.</p>

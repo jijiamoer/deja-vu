@@ -15,7 +15,7 @@ deja aylar öncesi dahil hepsini indeksler ve önemli kısmı
 
 <p align="center"><sub><em>Kimse arama yapmadı; ajan deja'yı kendisi çağırdı. Gerçek model ve gerçek araç çağrılarıyla iki gerçek çalıştırma, sentetik bir külliyat üzerinde: kimsenin geçmişi yayımlanmıyor.</em></sub></p>
 
-<p align="center"><b>deja ilk dakikadan itibaren dolu: 39 ajanın çoktan yazdığı geçmiş, saniyeler içinde indekslenir, model de ayrı bir toplama adımı da gerekmez.</b></p>
+<p align="center"><b>deja ilk dakikadan itibaren dolu: 38 ajanın çoktan yazdığı geçmiş, saniyeler içinde indekslenir, model de ayrı bir toplama adımı da gerekmez.</b></p>
 
 <p align="center"><b>Ölçebildiğimiz kodlama ajanı hafızaları arasında en isabetlisi, çalıştırması en ucuzu ve en hızlısı.</b></p>
 
@@ -200,7 +200,7 @@ Grok Build · Hermes · Goose · Qwen Code · Kimi Code · pi · omp (Oh My Pi) 
 Copilot CLI · VS Code Copilot Chat · Amp · prime-agent (PrimeIntellect) · Roo Code ·
 Continue · Crush · DeepSeek Harness · Cherry Studio · Senpi · gajae-code · Kimchi Coding ·
 Command Code · ZCode · CodeWhale · Reasonix · Kiro · Kilo Code · CodeBuddy Code ·
-TRAE CLI · Muse Code · Devin CLI · Zed.
+TRAE CLI · Muse Code · Junie · JetBrains AI Assistant · Devin CLI · Zed.
 
 Her birinin neyi desteklediği — MCP geri çağırma, otomatik geri çağırma, skill'ler, komutlar, resume, handoff —
 [İngilizce README'deki yetenek tablosunda](../../README.md#supported-harnesses). Özel depolama konumları `DEJA_*_ROOT`

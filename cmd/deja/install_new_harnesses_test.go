@@ -65,34 +65,52 @@ func TestInstallKimchiWritesTheAgentDirServer(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	t.Setenv("USERPROFILE", home)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
-	t.Setenv("KIMCHI_CODING_AGENT_DIR", "")
+	// Kimchi sets KIMCHI_CODING_AGENT_DIR itself and never reads
+	// XDG_CONFIG_HOME, so neither may move what deja writes.
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, "xdg"))
+	t.Setenv("KIMCHI_CODING_AGENT_DIR", filepath.Join(home, "moved-agent"))
 
-	res, err := installKimchi("/usr/local/bin/deja", false)
-	if err != nil {
+	if _, err := installKimchi("/usr/local/bin/deja", false); err != nil {
 		t.Fatal(err)
 	}
-	want := filepath.Join(home, ".config", "kimchi", "harness", "mcp.json")
-	if res.Path != want {
-		t.Errorf("path = %q, want %q", res.Path, want)
+	dir := filepath.Join(home, ".config", "kimchi", "harness")
+	assertMCPServerEntry(t, filepath.Join(dir, "mcp.json"))
+	if _, err := os.Stat(filepath.Join(dir, "skills", "deja-history", "SKILL.md")); err != nil {
+		t.Errorf("the native skill is not there: %v", err)
 	}
-	assertMCPServerEntry(t, want)
-	// Both of Kimchi's compatibility extensions ship disabled, so nothing
-	// arrives on its own and the note has to name the way in.
-	if !strings.Contains(res.Note, "claude-code-hook-adapter") {
-		t.Errorf("note = %q, want the command that turns recall on", res.Note)
+	if _, err := os.Stat(filepath.Join(dir, "extensions", "deja.ts")); err == nil {
+		t.Error("plain kimchi wrote the extension; that is kimchi-auto's")
 	}
+}
 
-	// KIMCHI_CODING_AGENT_DIR moves the whole agent directory, and the
-	// installer has to follow it or it writes where nothing reads.
-	moved := filepath.Join(home, "moved-agent")
-	t.Setenv("KIMCHI_CODING_AGENT_DIR", moved)
-	res, err = installKimchi("/usr/local/bin/deja", false)
-	if err != nil {
+func TestInstallKimchiAutoAddsTheExtension(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+
+	if _, err := installKimchiAuto("/usr/local/bin/deja", false); err != nil {
 		t.Fatal(err)
 	}
-	if res.Path != filepath.Join(moved, "mcp.json") {
-		t.Errorf("path = %q, want it under the relocated agent dir", res.Path)
+	ext := filepath.Join(home, ".config", "kimchi", "harness", "extensions", "deja.ts")
+	b, err := os.ReadFile(ext)
+	if err != nil {
+		t.Fatalf("extension: %v", err)
+	}
+	for _, event := range []string{"before_agent_start", "tool_result", "session_compact"} {
+		if !strings.Contains(string(b), event) {
+			t.Errorf("the extension answers no %s event", event)
+		}
+	}
+	if again, err := installKimchiAuto("/usr/local/bin/deja", false); err != nil {
+		t.Fatal(err)
+	} else if again.Action != "unchanged" {
+		t.Errorf("second install = %q, want unchanged", again.Action)
+	}
+	if _, err := installKimchiAuto("/usr/local/bin/deja", true); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(ext); err == nil {
+		t.Errorf("the extension survived uninstall: %s", ext)
 	}
 }
 

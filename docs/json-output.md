@@ -1118,7 +1118,7 @@ material the screen prints:
 Every count has its arithmetic in the shape rather than in prose. `work.records`
 is how many records of each kind fall inside the window; `work.files` and
 `work.commands` are the distinct paths and command lines those records name, so
-forty records naming one file are one file. `questions.repeated` is how many
+forty-one records naming one file are one file. `questions.repeated` is how many
 distinct questions were asked in more than one session, and
 `questions.distinct` is the population it is a fraction of — a repeat count
 without its denominator is not a figure about anything. `work.undated` is the
@@ -1231,7 +1231,7 @@ Returns a JSON array of blame hits (same stability rules as exact search):
 ```
 
 Each row also carries the session's `touched` list, bounded to the three files
-it worked on most. The manifest holds up to forty, and serving all of them spent
+it worked on most. The manifest holds up to forty-one, and serving all of them spent
 3186 of an 8044-byte answer on files the question did not ask about — and the
 answer is trimmed by dropping whole sessions to fit its budget, so those bytes
 cost history. Over six real paths the same budget went from 20 sessions and

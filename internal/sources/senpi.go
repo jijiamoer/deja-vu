@@ -16,7 +16,7 @@ import (
 // and this file is the two roots and their names.
 //
 //	Senpi:  ${SENPI_CODING_AGENT_DIR:-~/.senpi/agent}/sessions/<encoded-cwd>/*.jsonl
-//	Kimchi: ${KIMCHI_CODING_AGENT_DIR:-~/.config/kimchi/harness}/sessions/--<encoded-cwd>--/*.jsonl
+//	Kimchi: ~/.config/kimchi/harness/sessions/--<encoded-cwd>--/*.jsonl
 //
 // Both keep the encoded project directory pi has, but the header line's cwd
 // names the project: the folder name is lossy, and a Kimchi file directly under
@@ -70,18 +70,12 @@ func senpiProject(path string) string {
 	return claudeProjectName(dir)
 }
 
-// KimchiConfigDir is Kimchi's harness directory; KIMCHI_CODING_AGENT_DIR moves
-// it. The default sits under the config home rather than a dot directory of its
-// own, so XDG_CONFIG_HOME moves it too.
+// KimchiConfigDir is Kimchi's harness directory, always under $HOME. Kimchi
+// 0.1.99 sets KIMCHI_CODING_AGENT_DIR itself at startup (src/entry.ts:46-51),
+// over whatever the shell had, and never reads XDG_CONFIG_HOME: a stand with
+// both set still wrote its sessions to ~/.config/kimchi/harness.
 func KimchiConfigDir() string {
-	if p := EnvPath("KIMCHI_CODING_AGENT_DIR", ""); p != "" {
-		return expandTilde(p)
-	}
-	cfg := os.Getenv("XDG_CONFIG_HOME")
-	if cfg == "" {
-		cfg = filepath.Join(Home(), ".config")
-	}
-	return filepath.Join(cfg, "kimchi", "harness")
+	return filepath.Join(Home(), ".config", "kimchi", "harness")
 }
 
 // KimchiRoot is the session store root. DEJA_KIMCHI_ROOT wins.

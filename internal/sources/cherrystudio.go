@@ -119,6 +119,12 @@ func cherryStudioAppDirs() []string {
 	return dirs
 }
 
+// CherryStudioDefaultRoot is where the app keeps its Claude Code store when
+// nothing moved it, for a report to name on a machine that has none.
+func CherryStudioDefaultRoot() string {
+	return filepath.Join(cherryStudioDefaultDir(), "Data", "Agents", ".claude")
+}
+
 func cherryStudioDefaultDir() string {
 	switch runtime.GOOS {
 	case "darwin":
@@ -177,6 +183,22 @@ func CherryStudioDatabases() []string {
 		out = append(out, filepath.Join(base, "Data", "cherrystudio.sqlite"))
 	}
 	return out
+}
+
+// CherryStudioClaudeConfigDir is the CLAUDE_CONFIG_DIR Cherry Studio hands the
+// Claude agents it runs: `feature.agents.claude.root`, which 2.0.14 sets to
+// <userData>/Data/Agents/.claude. The app directory is the first one whose
+// database exists, so a moved store wins over the default it left behind.
+func CherryStudioClaudeConfigDir() string {
+	dirs := cherryStudioAppDirs()
+	base := dirs[len(dirs)-1]
+	for _, d := range dirs {
+		if fileExists(filepath.Join(d, "Data", "cherrystudio.sqlite")) {
+			base = d
+			break
+		}
+	}
+	return filepath.Join(base, "Data", "Agents", ".claude")
 }
 
 // CherryStudioMCPServer is one row of the app's `mcp_server` table.

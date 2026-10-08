@@ -24,6 +24,8 @@ import (
 //	once per session, allowed one expensive run
 //	  hook-context       0.85 s, then 50 ms
 //	  hook-antigravity   0.56 s, then 10 ms
+//	  hook-codewhale     hook-context's run on a session's first message,
+//	                     then hook-prompt's or hook-tool's
 //
 //	detached, off every blocking path
 //	  hook-refresh       0.42 to 0.74 s, by design (see runHookRefresh)

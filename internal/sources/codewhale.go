@@ -106,7 +106,16 @@ func CodeWhaleSidecarFiles() []string {
 				out = append(out, p)
 			}
 		}
-		out = append(out, walkFiles(filepath.Join(root, "checkpoints"), func(string) bool { return true })...)
+		// A transcript sits directly in the root, so everything below it is
+		// bookkeeping: checkpoints/, and since 0.10.0 a directory per session
+		// (approval receipts, runtime state), .late-usage/ and
+		// .work-graph-import-archive/, which keeps copies of migrated sessions.
+		entries, _ := os.ReadDir(root)
+		for _, e := range entries {
+			if e.IsDir() {
+				out = append(out, walkFiles(filepath.Join(root, e.Name()), func(string) bool { return true })...)
+			}
+		}
 	}
 	return out
 }
@@ -188,6 +197,12 @@ func ParseCodeWhaleFile(path string) ([]model.Session, error) {
 	if err := json.Unmarshal(b, &doc); err != nil {
 		return nil, err
 	}
+	return parseCodeWhaleDoc(path, doc), nil
+}
+
+// parseCodeWhaleDoc reads a decoded session; a compaction capture hands over
+// the session file's metadata with the messages a compaction saved.
+func parseCodeWhaleDoc(path string, doc codeWhaleSession) []model.Session {
 	id := doc.Metadata.ID
 	if id == "" {
 		id = strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
@@ -225,11 +240,20 @@ func ParseCodeWhaleFile(path string) ([]model.Session, error) {
 			// its own Role documentation. Never the person's words.
 			continue
 		}
+		if m.Role == "user" {
+			if summary, ok := codeWhaleCheckpoint(m.Content); ok {
+				if summary != "" {
+					s.Touch(ts)
+					s.Messages = append(s.Messages, model.Message{Role: RoleSummary, Text: summary, Time: ts})
+				}
+				continue
+			}
+		}
 		role := "assistant"
 		if m.Role == "user" {
 			role = "user"
 		}
-		if text := clineContentText(m.Content); text != "" {
+		if text := stripCodeWhaleTurnMeta(clineContentText(m.Content)); text != "" {
 			s.Touch(ts)
 			s.Messages = append(s.Messages, model.Message{Role: role, Text: text, Time: ts})
 		}
@@ -251,9 +275,27 @@ func ParseCodeWhaleFile(path string) ([]model.Session, error) {
 		s.Touch(doc.Metadata.UpdatedAt)
 	}
 	if len(s.Messages) == 0 {
-		return nil, nil
+		return nil
 	}
-	return []model.Session{s}, nil
+	return []model.Session{s}
+}
+
+// stripCodeWhaleTurnMeta drops the <turn_meta> block CodeWhale 0.10.0 saves as
+// a text block of every user message: the date, the workspace, the permission
+// posture and the files it thinks matter. It is the harness talking, and
+// indexed as the person's words it made every turn match every other.
+func stripCodeWhaleTurnMeta(text string) string {
+	for {
+		start := strings.Index(text, "<turn_meta>")
+		if start < 0 {
+			return strings.TrimSpace(text)
+		}
+		end := strings.Index(text[start:], "</turn_meta>")
+		if end < 0 {
+			return strings.TrimSpace(text[:start])
+		}
+		text = text[:start] + text[start+end+len("</turn_meta>"):]
+	}
 }
 
 // codeWhaleExitCode reads a failed bash result: CodeWhale marks it is_error
@@ -460,4 +502,56 @@ func isCodeWhaleSession(p string) bool {
 		}
 	}
 	return false
+}
+
+// A compaction leaves the summary in the saved history as a user message of two
+// text blocks: the note the model continues from, then a fixed provenance
+// marker (compaction_checkpoint_message, crates/tui/src/compaction.rs). The
+// note is a header paragraph, the summary, and a closing paragraph; 0.10.1
+// opens it "Codewhale handoff note", 0.10.0 with Codex's summary prefix.
+// Before 0.9.6 the summary was a message opening with its own heading.
+const codeWhaleCheckpointMarker = "<!-- codewhale.compaction-checkpoint.v1 -->"
+
+var (
+	codeWhaleSummaryHeaders  = []string{"Codewhale handoff note", "Another language model started to solve this problem"}
+	codeWhaleSummaryClosings = []string{"Continue the user's task from here.", "Continue the same user task from this state."}
+)
+
+// codeWhaleCheckpoint reports whether content is a compaction checkpoint, and
+// its summary without the paragraphs addressed to the model.
+func codeWhaleCheckpoint(content json.RawMessage) (string, bool) {
+	var blocks []struct {
+		Type string `json:"type"`
+		Text string `json:"text"`
+	}
+	if json.Unmarshal(content, &blocks) != nil || len(blocks) == 0 {
+		return "", false
+	}
+	if len(blocks) == 2 && blocks[0].Type == "text" && blocks[1].Type == "text" &&
+		strings.TrimSpace(blocks[1].Text) == codeWhaleCheckpointMarker {
+		text := strings.TrimSpace(blocks[0].Text)
+		for _, h := range codeWhaleSummaryHeaders {
+			if strings.HasPrefix(text, h) {
+				if _, rest, ok := strings.Cut(text, "\n\n"); ok {
+					text = rest
+				}
+				break
+			}
+		}
+		for _, c := range codeWhaleSummaryClosings {
+			if i := strings.LastIndex(text, "\n\n"+c); i >= 0 {
+				text = text[:i]
+				break
+			}
+		}
+		return strings.TrimSpace(text), true
+	}
+	if len(blocks) == 1 && blocks[0].Type == "text" {
+		text := strings.TrimSpace(blocks[0].Text)
+		if strings.HasPrefix(text, "## 📋 Conversation Summary (Auto-Generated)") ||
+			(strings.HasPrefix(text, "## Pinned Facts (User Anchors)") && strings.Contains(text, "## 📋 Conversation Summary (Auto-Generated)")) {
+			return text, true
+		}
+	}
+	return "", false
 }

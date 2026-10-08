@@ -277,6 +277,26 @@ func installGrokStatusline(exe string, uninstall bool) (installResult, error) {
 	return installTOMLStatusline(filepath.Join(sources.GrokHome(), "config.toml"), "ui.status_line", block, cmd, uninstall)
 }
 
+// installTraeStatusline: TRAE CLI reads [tui.statusline] type = "command" from
+// $TRAE_HOME/traecli.toml (0.207.1 and 0.208.1-alpha.5 both load it, and refuse
+// an unknown type). It pipes workspace, model and usage JSON with no session
+// id. A live check needs an enterprise login, which the TUI asks for first.
+func installTraeStatusline(exe string, uninstall bool) (installResult, error) {
+	cmd := hostStatuslineCommand(exe, uninstall)
+	block := "[tui.statusline]\ntype = \"command\"\ncommand = " + strconv.Quote(cmd) + "\n"
+	return installTOMLStatusline(traeConfigPath(), "tui.statusline", block, cmd, uninstall)
+}
+
+// installAntigravityStatusline: agy reads statusLine from
+// ~/.gemini/antigravity-cli/settings.json (agy 1.3.1, /statusline <command>)
+// and pipes conversation_id, session_id and transcript_path on every agent
+// state change. stack_with_default keeps agy's own line above deja's.
+func installAntigravityStatusline(exe string, uninstall bool) (installResult, error) {
+	cmd := hostStatuslineCommand(exe, uninstall)
+	return installJSONStatusline(filepath.Join(homeDir(), ".gemini", "antigravity-cli", "settings.json"), []string{"statusLine"},
+		map[string]any{"type": "command", "command": cmd, "stack_with_default": true}, uninstall)
+}
+
 // installKimiStatusline: Kimi Code reads [status_line] command from tui.toml
 // since 0.30.0 (0.28 and 0.29 have no status line and ignore the file). It
 // pipes camelCase JSON with sessionId and no transcript path, and waits 300 ms
