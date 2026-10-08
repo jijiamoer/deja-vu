@@ -2,6 +2,10 @@ https://vshulcz.github.io/deja-vu/
 https://vshulcz.github.io/deja-vu/guide/getting-started.html
 https://vshulcz.github.io/deja-vu/guide/forgetting.html
 https://vshulcz.github.io/deja-vu/guide/does-my-agent-remember.html
+https://vshulcz.github.io/deja-vu/
+https://vshulcz.github.io/deja-vu/guide/getting-started.html
+https://vshulcz.github.io/deja-vu/guide/forgetting.html
+https://vshulcz.github.io/deja-vu/guide/does-my-agent-remember.html
 https://vshulcz.github.io/deja-vu/guide/session-files-on-disk.html
 https://vshulcz.github.io/deja-vu/guide/delete-old-claude-sessions.html
 https://vshulcz.github.io/deja-vu/guide/where-sessions-are-stored.html

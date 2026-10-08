@@ -18,6 +18,13 @@
     <summary>The most accurate, cheapest and fastest memory for coding agents: Claude Code, Codex and 39 more agents, built from the sessions already on your disk.</summary>
   </entry>
   <entry>
+    <title>deja-vu — the one memory your coding agents share</title>
+    <id>https://vshulcz.github.io/deja-vu/</id>
+    <link rel="alternate" type="text/html" href="https://vshulcz.github.io/deja-vu/"></link>
+    <updated>2026-10-09T00:00:00Z</updated>
+    <summary>The most accurate, cheapest and fastest memory for coding agents: Claude Code, Codex and 39 more agents, built from the sessions already on your disk.</summary>
+  </entry>
+  <entry>
     <title>Memory plugins for Claude Code, Codex and Cursor, compared</title>
     <id>https://vshulcz.github.io/deja-vu/guide/compare.html</id>
     <link rel="alternate" type="text/html" href="https://vshulcz.github.io/deja-vu/guide/compare.html"></link>
@@ -81,11 +88,25 @@
     <summary>Claude Code, Codex, Cursor and Gemini CLI all forget between sessions. What each keeps on disk, what compaction preserves, and how to get history back.</summary>
   </entry>
   <entry>
+    <title>Does Claude Code remember previous conversations? — deja-vu</title>
+    <id>https://vshulcz.github.io/deja-vu/guide/does-my-agent-remember.html</id>
+    <link rel="alternate" type="text/html" href="https://vshulcz.github.io/deja-vu/guide/does-my-agent-remember.html"></link>
+    <updated>2026-10-09T00:00:00Z</updated>
+    <summary>Claude Code, Codex, Cursor and Gemini CLI all forget between sessions. What each keeps on disk, what compaction preserves, and how to get history back.</summary>
+  </entry>
+  <entry>
     <title>Find the coding session where you solved it — deja-vu</title>
     <id>https://vshulcz.github.io/deja-vu/guide/find-a-session.html</id>
     <link rel="alternate" type="text/html" href="https://vshulcz.github.io/deja-vu/guide/find-a-session.html"></link>
     <updated>2026-10-09T00:00:00Z</updated>
     <summary>How to search chat history across every coding agent on the machine, by the token you remember rather than the topic you half-remember.</summary>
+  </entry>
+  <entry>
+    <title>Why your coding agent forgets between sessions — deja-vu</title>
+    <id>https://vshulcz.github.io/deja-vu/guide/forgetting.html</id>
+    <link rel="alternate" type="text/html" href="https://vshulcz.github.io/deja-vu/guide/forgetting.html"></link>
+    <updated>2026-10-09T00:00:00Z</updated>
+    <summary>Why coding agents start from scratch every session, what compaction keeps, and how to read the history Claude Code, Codex and Cursor already wrote.</summary>
   </entry>
   <entry>
     <title>Why your coding agent forgets between sessions — deja-vu</title>
@@ -268,26 +289,5 @@
     <link rel="alternate" type="text/html" href="https://vshulcz.github.io/deja-vu/guide/memory-for-kiro.html"></link>
     <updated>2026-10-09T00:00:00Z</updated>
     <summary>Kiro keeps every session on disk — the CLI one way, the IDE another — and starts each new one empty. deja reads both stores and answers from them in any agent.</summary>
-  </entry>
-  <entry>
-    <title>Add memory to Oh My Pi (omp): recall past sessions — deja-vu</title>
-    <id>https://vshulcz.github.io/deja-vu/guide/memory-for-omp.html</id>
-    <link rel="alternate" type="text/html" href="https://vshulcz.github.io/deja-vu/guide/memory-for-omp.html"></link>
-    <updated>2026-10-09T00:00:00Z</updated>
-    <summary>Oh My Pi (omp) keeps a session log per agent directory and reads none of it back. deja wires its extension, MCP server and skill, and indexes every agent.</summary>
-  </entry>
-  <entry>
-    <title>Add memory to OpenClaw: every agent&#39;s sessions — deja-vu</title>
-    <id>https://vshulcz.github.io/deja-vu/guide/memory-for-openclaw.html</id>
-    <link rel="alternate" type="text/html" href="https://vshulcz.github.io/deja-vu/guide/memory-for-openclaw.html"></link>
-    <updated>2026-10-09T00:00:00Z</updated>
-    <summary>OpenClaw keeps a session log per agent and can resume one, but reads no earlier session. deja indexes them with every other agent on the machine.</summary>
-  </entry>
-  <entry>
-    <title>Add memory to opencode: every agent&#39;s sessions — deja-vu</title>
-    <id>https://vshulcz.github.io/deja-vu/guide/memory-for-opencode.html</id>
-    <link rel="alternate" type="text/html" href="https://vshulcz.github.io/deja-vu/guide/memory-for-opencode.html"></link>
-    <updated>2026-10-09T00:00:00Z</updated>
-    <summary>How to give opencode recall over the sessions every agent on the machine already wrote — the plugin, the four moments it fires, and the CLI install.</summary>
   </entry>
 </feed>
