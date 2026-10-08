@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -105,7 +106,7 @@ func TestDevinPluginMatchesTheInstaller(t *testing.T) {
 	}
 	// The bridge runs under `sh` from the hooks.json entries; it has to be
 	// executable in the bundle a checkout hands the installer.
-	if info, err := os.Stat(filepath.Join(root, "hooks", "deja.sh")); err != nil || info.Mode()&0o111 == 0 {
+	if info, err := os.Stat(filepath.Join(root, "hooks", "deja.sh")); err != nil || (runtime.GOOS != "windows" && info.Mode()&0o111 == 0) {
 		t.Errorf("hooks/deja.sh is not executable: %v", err)
 	}
 	if m.Skills != "./skills/" {

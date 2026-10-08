@@ -215,6 +215,10 @@ func TestDoctorJSONGolden(t *testing.T) {
 	// JetBrains IDEs' config directory, the same three homes.
 	got = strings.ReplaceAll(got, "<tmp>/home/Library/Application Support/JetBrains", "<tmp>/home/.config/JetBrains")
 	got = strings.ReplaceAll(got, "<tmp>/home/AppData/Roaming/JetBrains", "<tmp>/home/.config/JetBrains")
+	// Devin's store is under %LOCALAPPDATA%\devin on Windows and its config
+	// under %APPDATA%\devin; both normalise to the posix homes the golden keeps.
+	got = strings.ReplaceAll(got, "<tmp>/home/AppData/Local/devin", "<tmp>/home/.local/share/devin")
+	got = strings.ReplaceAll(got, "<tmp>/home/AppData/Roaming/devin", "<tmp>/home/.config/devin")
 	wantRaw, err := os.ReadFile(filepath.Join("testdata", "doctor.json"))
 	if err != nil {
 		t.Fatal(err)
