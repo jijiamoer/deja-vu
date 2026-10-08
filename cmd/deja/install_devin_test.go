@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -124,11 +125,16 @@ func TestInstallDevinMCPRoundTrip(t *testing.T) {
 	if !ok {
 		t.Fatalf("mcp_config.json has no deja server: %s", raw)
 	}
-	// entryRunsDeja reads the cmd /c wrapper Windows puts around the binary;
-	// the test's own deja.test counts only through the wiring record.
-	forgetWrittenExes()
-	if !entryRunsDeja(deja) {
-		t.Errorf("deja server does not run deja: %v", deja)
+	// The subcommand is the last word whether the command runs the binary
+	// directly (posix) or through cmd /c on Windows; flatten both shapes.
+	words := strings.Fields(fmt.Sprint(deja["command"]))
+	if a, ok := deja["args"].([]any); ok {
+		for _, v := range a {
+			words = append(words, strings.Fields(fmt.Sprint(v))...)
+		}
+	}
+	if len(words) == 0 || words[len(words)-1] != "mcp" {
+		t.Errorf("deja server does not run `deja mcp`: %v", deja)
 	}
 	if _, err := os.Stat(sharedSkillPath()); err != nil {
 		t.Errorf("skill file was not written to %s: %v", sharedSkillPath(), err)
