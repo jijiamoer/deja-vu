@@ -95,13 +95,6 @@
     <summary>Why coding agents start from scratch every session, what compaction keeps, and how to read the history Claude Code, Codex and Cursor already wrote.</summary>
   </entry>
   <entry>
-    <title>Claude Code, Codex, Cursor and 38 more agents — deja-vu</title>
-    <id>https://vshulcz.github.io/deja-vu/guide/harnesses.html</id>
-    <link rel="alternate" type="text/html" href="https://vshulcz.github.io/deja-vu/guide/harnesses.html"></link>
-    <updated>2026-10-09T00:00:00Z</updated>
-    <summary>The forty-one coding agents deja indexes today, where each stores its history, and how to add a new one.</summary>
-  </entry>
-  <entry>
     <title>Claude Code lost your context: how to get it back — deja-vu</title>
     <id>https://vshulcz.github.io/deja-vu/guide/lost-context.html</id>
     <link rel="alternate" type="text/html" href="https://vshulcz.github.io/deja-vu/guide/lost-context.html"></link>
@@ -289,5 +282,12 @@
     <link rel="alternate" type="text/html" href="https://vshulcz.github.io/deja-vu/guide/memory-for-openclaw.html"></link>
     <updated>2026-10-09T00:00:00Z</updated>
     <summary>OpenClaw keeps a session log per agent and can resume one, but reads no earlier session. deja indexes them with every other agent on the machine.</summary>
+  </entry>
+  <entry>
+    <title>Add memory to opencode: every agent&#39;s sessions — deja-vu</title>
+    <id>https://vshulcz.github.io/deja-vu/guide/memory-for-opencode.html</id>
+    <link rel="alternate" type="text/html" href="https://vshulcz.github.io/deja-vu/guide/memory-for-opencode.html"></link>
+    <updated>2026-10-09T00:00:00Z</updated>
+    <summary>How to give opencode recall over the sessions every agent on the machine already wrote — the plugin, the four moments it fires, and the CLI install.</summary>
   </entry>
 </feed>

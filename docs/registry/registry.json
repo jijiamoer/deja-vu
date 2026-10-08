@@ -2923,7 +2923,7 @@
         "rules": {
           "status": "yes",
           "proof": "fixture",
-          "note": "the AGENTS.md convention, in Devin's user config dir beside the hooks and MCP config; not yet stand-verified against a live host"
+          "note": "Devin's docs: a user-global ~/.config/devin/AGENTS.md sets rules for every project (docs.devin.ai/cli/extensibility), beside the hooks and MCP config deja already writes there; not stand-verified against a live host"
         },
         "statusline": {
           "status": "no",
