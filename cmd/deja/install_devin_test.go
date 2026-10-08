@@ -124,9 +124,11 @@ func TestInstallDevinMCPRoundTrip(t *testing.T) {
 	if !ok {
 		t.Fatalf("mcp_config.json has no deja server: %s", raw)
 	}
-	args, _ := deja["args"].([]any)
-	if len(args) == 0 || args[0] != "mcp" {
-		t.Errorf("deja server does not run `deja mcp`: %v", deja)
+	// entryRunsDeja reads the cmd /c wrapper Windows puts around the binary;
+	// the test's own deja.test counts only through the wiring record.
+	forgetWrittenExes()
+	if !entryRunsDeja(deja) {
+		t.Errorf("deja server does not run deja: %v", deja)
 	}
 	if _, err := os.Stat(sharedSkillPath()); err != nil {
 		t.Errorf("skill file was not written to %s: %v", sharedSkillPath(), err)
